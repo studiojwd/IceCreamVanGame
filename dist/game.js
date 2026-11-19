@@ -307,7 +307,7 @@
     const product = PRODUCTS.find(p => p.id === productId);
     const waiting = game.customers.find(c => c.order === productId && !game.prep.some(p => p.targetId === c.id));
     if (!waiting) {
-      mistake("NO ONE ORDERED THAT!");
+      mistake("NO ONE ORDERED THAT!", product.price);
       return;
     }
     if (game.prep.length >= prepSlots()) {
@@ -320,13 +320,14 @@
     updateButtons();
   }
 
-  function mistake(message) {
+  function mistake(message, cashPenalty = 0) {
     if (!game) return;
     game.combo = 0;
     game.score = Math.max(0, game.score - 60);
+    game.cash = Math.max(0, game.cash - cashPenalty);
     game.shake = .25;
     game.customers.forEach(c => { c.patience = Math.max(.4, c.patience - .45); });
-    showToast(message, "bad");
+    showToast(cashPenalty ? `${message} · -£${cashPenalty} TAKINGS` : message, "bad");
     playTone("bad");
     refreshHeader();
   }
