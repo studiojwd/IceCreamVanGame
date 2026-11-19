@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10243f">
+  <meta name="description" content="Whitby Whippy Dash — a pixel-art British ice cream van arcade game.">
+  <title>Whitby Whippy Dash</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app">
+    <header class="topbar">
+      <button id="brandBtn" class="brand" aria-label="Return to title screen">
+        <span class="brand-cone" aria-hidden="true"></span>
+        <span><strong>WHITBY</strong><em>WHIPPY DASH</em></span>
+      </button>
+      <div class="top-stats" aria-live="polite">
+        <span><small>SCORE</small><b id="scoreValue">000000</b></span>
+        <span><small>TAKINGS</small><b id="cashValue">£0</b></span>
+        <span><small>TIME</small><b id="timeValue">01:15</b></span>
+        <span class="combo-stat"><small>COMBO</small><b id="comboValue">x1</b></span>
+      </div>
+      <div class="top-actions">
+        <button id="soundBtn" class="icon-btn" aria-label="Toggle sound" title="Toggle sound">♪</button>
+        <button id="pauseBtn" class="icon-btn" aria-label="Pause game" title="Pause game">Ⅱ</button>
+      </div>
+    </header>
+
+    <section class="game-frame" aria-label="Whitby Whippy Dash game">
+      <canvas id="gameCanvas" width="960" height="540" aria-label="Pixel art game scene"></canvas>
+
+      <section id="titleScreen" class="screen title-screen active">
+        <div class="title-shade"></div>
+        <div class="title-copy">
+          <p class="eyebrow">A PROPER BRITISH ICE CREAM VAN GAME</p>
+          <h1><span>WHITBY</span><br>WHIPPY DASH</h1>
+          <p class="title-sub">Serve the queue. Upgrade the van.<br>Chase the perfect round.</p>
+          <button id="playBtn" class="pixel-btn primary">START YOUR ROUND</button>
+          <button id="howBtn" class="text-btn">HOW TO PLAY</button>
+        </div>
+        <div class="title-record">
+          <small>CAREER BEST</small>
+          <strong id="careerBest">000000</strong>
+        </div>
+      </section>
+
+      <section id="locationScreen" class="screen menu-screen" aria-labelledby="locationHeading">
+        <div class="menu-panel wide">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">CHOOSE TODAY'S PITCH</p>
+              <h2 id="locationHeading">WHERE ARE WE PARKING?</h2>
+            </div>
+            <div class="bank-card"><small>VAN FUND</small><strong id="bankValue">£0</strong></div>
+          </div>
+          <div id="locationGrid" class="location-grid"></div>
+          <div class="panel-actions">
+            <button id="garageBtn" class="pixel-btn secondary">OPEN THE GARAGE</button>
+            <button id="backTitleBtn" class="text-btn">BACK TO TITLE</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="garageScreen" class="screen menu-screen" aria-labelledby="garageHeading">
+        <div class="menu-panel wide">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">EQUIPMENT &amp; FIT-OUT</p>
+              <h2 id="garageHeading">THE VAN WORKSHOP</h2>
+            </div>
+            <div class="bank-card"><small>VAN FUND</small><strong id="garageBank">£0</strong></div>
+          </div>
+          <div id="upgradeGrid" class="upgrade-grid"></div>
+          <div class="panel-actions">
+            <button id="garageBackBtn" class="pixel-btn primary">BACK TO LOCATIONS</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="resultsScreen" class="screen menu-screen" aria-labelledby="resultsHeading">
+        <div class="menu-panel results-panel">
+          <p id="resultEyebrow" class="eyebrow">SHIFT COMPLETE</p>
+          <h2 id="resultsHeading">WHAT A ROUND!</h2>
+          <div class="score-stamp"><small>FINAL SCORE</small><strong id="finalScore">000000</strong></div>
+          <div id="newBest" class="new-best hidden">★ NEW LOCATION RECORD ★</div>
+          <div class="result-grid">
+            <span><small>CUSTOMERS</small><b id="servedResult">0</b></span>
+            <span><small>BEST COMBO</small><b id="comboResult">x1</b></span>
+            <span><small>TAKINGS</small><b id="cashResult">£0</b></span>
+          </div>
+          <div id="unlockNotice" class="unlock-notice hidden"></div>
+          <div class="panel-actions stacked">
+            <button id="againBtn" class="pixel-btn primary">SAME PITCH AGAIN</button>
+            <button id="locationsBtn" class="pixel-btn secondary">CHOOSE ANOTHER PITCH</button>
+            <button id="resultsGarageBtn" class="text-btn">SPEND YOUR TAKINGS</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="helpScreen" class="screen menu-screen" aria-labelledby="helpHeading">
+        <div class="menu-panel help-panel">
+          <p class="eyebrow">DRIVER'S HANDBOOK</p>
+          <h2 id="helpHeading">KEEP THE QUEUE HAPPY</h2>
+          <div class="help-steps">
+            <article><b>1</b><div><strong>READ THE BUBBLE</strong><p>Each customer shows the treat they want. Their patience bar is ticking.</p></div></article>
+            <article><b>2</b><div><strong>MAKE THE RIGHT TREAT</strong><p>Tap the matching hatch button, or use keys 1–4. Better kit prepares it faster.</p></div></article>
+            <article><b>3</b><div><strong>BUILD A COMBO</strong><p>Fast, correct orders build your multiplier. Wrong treats break the combo.</p></div></article>
+            <article><b>4</b><div><strong>UPGRADE &amp; TRAVEL</strong><p>Spend takings in the garage and unlock busier pitches with bigger scores.</p></div></article>
+          </div>
+          <button id="helpBackBtn" class="pixel-btn primary">GOT IT</button>
+        </div>
+      </section>
+
+      <section id="pauseScreen" class="screen menu-screen" aria-labelledby="pauseHeading">
+        <div class="menu-panel pause-panel">
+          <p class="eyebrow">MIND THE MELT</p>
+          <h2 id="pauseHeading">ROUND PAUSED</h2>
+          <button id="resumeBtn" class="pixel-btn primary">BACK TO THE HATCH</button>
+          <button id="quitBtn" class="text-btn">END THIS ROUND</button>
+        </div>
+      </section>
+
+      <div id="toast" class="toast" aria-live="assertive"></div>
+    </section>
+
+    <section id="serviceDeck" class="service-deck" aria-label="Ice cream service controls">
+      <div class="deck-label"><span>HATCH MENU</span><small>MATCH THE CUSTOMER'S ORDER</small></div>
+      <div id="productButtons" class="product-buttons"></div>
+      <div class="deck-meter">
+        <small>QUEUE</small>
+        <div class="queue-pips" id="queuePips"></div>
+        <span id="queueCount">0 / 5</span>
+      </div>
+    </section>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>

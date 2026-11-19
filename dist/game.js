@@ -1,0 +1,675 @@
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+
+  const $ = (id) => document.getElementById(id);
+  const screens = [...document.querySelectorAll(".screen")];
+
+  const PRODUCTS = [
+    { id: "whippy", name: "Classic Whippy", short: "WHIPPY", price: 3, points: 120, prep: 1.35, key: "1", palette: ["#fffdf4", "#f2ad3c", "#e93448"] },
+    { id: "flake", name: "Chocolate 99", short: "99 FLAKE", price: 4, points: 170, prep: 1.8, key: "2", palette: ["#fffdf4", "#f2ad3c", "#6c3527"] },
+    { id: "sundae", name: "Berry Sundae", short: "SUNDAE", price: 5, points: 220, prep: 2.15, key: "3", palette: ["#fffdf4", "#e93471", "#74bfe8"] },
+    { id: "lolly", name: "Rocket Lolly", short: "LOLLY", price: 2, points: 95, prep: .9, key: "4", palette: ["#e93448", "#fffdf4", "#33a8e8"] }
+  ];
+
+  const LOCATIONS = [
+    { id: "whitby", name: "Whitby Harbour", detail: "SEA BREEZE · STEADY QUEUE", unlock: 0, duration: 75, spawn: 3.5, patience: 18, mult: 1, scene: "#38aee8" },
+    { id: "village", name: "Village Fête", detail: "BUNTING · FAMILY RUSH", unlock: 2400, duration: 75, spawn: 3, patience: 17, mult: 1.15, scene: "#54be75" },
+    { id: "match", name: "Match Day", detail: "HALF-TIME · BIG SURGE", unlock: 6500, duration: 80, spawn: 2.45, patience: 15.5, mult: 1.35, scene: "#e9ad37" },
+    { id: "city", name: "City Lights", detail: "NIGHT SHIFT · EXPERT PACE", unlock: 11500, duration: 85, spawn: 2.05, patience: 14.5, mult: 1.6, scene: "#7d63bf" }
+  ];
+
+  const UPGRADES = [
+    { id: "machine", icon: "M", name: "Soft-Serve Machine", desc: "Whips cones and 99s 13% faster per level.", base: 120 },
+    { id: "heads", icon: "2×", name: "Twin-Head Setup", desc: "Adds simultaneous prep slots at levels 1 and 3.", base: 180 },
+    { id: "freezer", icon: "F", name: "Display Freezer", desc: "Chills lollies and sundaes faster; boosts their tips.", base: 135 },
+    { id: "till", icon: "£", name: "Contactless Till", desc: "Faster payment keeps patience high and lifts every tip.", base: 150 },
+    { id: "hatch", icon: "H", name: "Serving Hatch", desc: "A wider hatch holds a larger, more patient queue.", base: 165 },
+    { id: "power", icon: "⚡", name: "Quiet Generator", desc: "More reliable power speeds up every order.", base: 210 }
+  ];
+
+  const DEFAULT_SAVE = {
+    bank: 0,
+    career: 0,
+    highs: { whitby: 0, village: 0, match: 0, city: 0 },
+    upgrades: { machine: 0, heads: 0, freezer: 0, till: 0, hatch: 0, power: 0 },
+    sound: true,
+    helpSeen: false
+  };
+
+  function loadSave() {
+    try {
+      const raw = JSON.parse(localStorage.getItem("whitby-whippy-dash-save"));
+      if (!raw) return structuredClone(DEFAULT_SAVE);
+      return {
+        ...structuredClone(DEFAULT_SAVE),
+        ...raw,
+        highs: { ...DEFAULT_SAVE.highs, ...(raw.highs || {}) },
+        upgrades: { ...DEFAULT_SAVE.upgrades, ...(raw.upgrades || {}) }
+      };
+    } catch (_) {
+      return structuredClone(DEFAULT_SAVE);
+    }
+  }
+
+  let save = loadSave();
+  let mode = "title";
+  let selectedLocation = 0;
+  let previousScreen = "titleScreen";
+  let game = null;
+  let lastTime = performance.now();
+  let toastTimer = 0;
+  let audioCtx = null;
+
+  const customerLooks = [
+    ["#f1b888", "#59311f", "#e93448"], ["#9a603d", "#17131a", "#33a8e8"],
+    ["#f4caa2", "#d86735", "#54b979"], ["#71412f", "#28202e", "#efb93f"],
+    ["#d89568", "#3a281f", "#e761a3"], ["#f0b07d", "#222b3a", "#7b62c2"]
+  ];
+
+  function persist() {
+    localStorage.setItem("whitby-whippy-dash-save", JSON.stringify(save));
+  }
+
+  function showScreen(id) {
+    screens.forEach((screen) => screen.classList.toggle("active", screen.id === id));
+  }
+
+  function showToast(message, tone = "normal") {
+    const el = $("toast");
+    el.textContent = message;
+    el.style.background = tone === "bad" ? "#ff8c8c" : tone === "good" ? "#54d69b" : "#ffd84d";
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 1500);
+  }
+
+  function formatScore(value) { return Math.max(0, Math.round(value)).toString().padStart(6, "0"); }
+  function formatTime(value) {
+    const v = Math.max(0, Math.ceil(value));
+    return `${String(Math.floor(v / 60)).padStart(2, "0")}:${String(v % 60).padStart(2, "0")}`;
+  }
+
+  function careerBest() { return Math.max(save.career, ...Object.values(save.highs)); }
+  function unlocked(loc) { return careerBest() >= loc.unlock; }
+  function maxQueue() { return 5 + Math.floor(save.upgrades.hatch / 2); }
+  function prepSlots() { return 1 + (save.upgrades.heads >= 1 ? 1 : 0) + (save.upgrades.heads >= 3 ? 1 : 0); }
+
+  function playTone(kind) {
+    if (!save.sound) return;
+    try {
+      audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      const now = audioCtx.currentTime;
+      const notes = kind === "serve" ? [523, 659, 784] : kind === "bad" ? [180, 140] : kind === "buy" ? [440, 660] : [320];
+      notes.forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "square";
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(.035, now + i * .07);
+        gain.gain.exponentialRampToValueAtTime(.001, now + i * .07 + .11);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(now + i * .07);
+        osc.stop(now + i * .07 + .12);
+      });
+    } catch (_) { /* audio is a bonus */ }
+  }
+
+  function buildProductButtons() {
+    const holder = $("productButtons");
+    holder.innerHTML = "";
+    PRODUCTS.forEach((product, index) => {
+      const button = document.createElement("button");
+      button.className = "product-btn";
+      button.dataset.product = product.id;
+      button.setAttribute("aria-label", `Prepare ${product.name}, key ${product.key}`);
+      button.innerHTML = `<canvas width="48" height="48" aria-hidden="true"></canvas><span><strong>${product.short}</strong><small>£${product.price} · ${product.prep.toFixed(1)}s</small></span><i class="key">${product.key}</i>`;
+      button.addEventListener("click", () => startProduct(product.id));
+      holder.appendChild(button);
+      const iconCtx = button.querySelector("canvas").getContext("2d");
+      iconCtx.imageSmoothingEnabled = false;
+      drawTreat(iconCtx, product.id, 24, 24, 1.15);
+      button.style.setProperty("--order", index);
+    });
+  }
+
+  function refreshHeader() {
+    const active = game && (mode === "playing" || mode === "paused");
+    $("scoreValue").textContent = formatScore(active ? game.score : 0);
+    $("cashValue").textContent = `£${active ? game.cash : save.bank}`;
+    $("timeValue").textContent = formatTime(active ? game.time : LOCATIONS[selectedLocation].duration);
+    $("comboValue").textContent = `x${active ? Math.max(1, game.combo) : 1}`;
+    $("careerBest").textContent = formatScore(careerBest());
+    $("soundBtn").textContent = save.sound ? "♪" : "×";
+    $("pauseBtn").disabled = mode !== "playing";
+  }
+
+  function renderLocations() {
+    $("bankValue").textContent = `£${save.bank}`;
+    const grid = $("locationGrid");
+    grid.innerHTML = "";
+    LOCATIONS.forEach((loc, index) => {
+      const isOpen = unlocked(loc);
+      const button = document.createElement("button");
+      button.className = `location-card${index === selectedLocation ? " selected" : ""}`;
+      button.style.setProperty("--scene", loc.scene);
+      button.disabled = !isOpen;
+      button.innerHTML = `${isOpen ? "" : `<span class="lock">SCORE ${formatScore(loc.unlock)} TO UNLOCK</span>`}<strong>${loc.name}</strong><small>${loc.detail}</small><small class="record">BEST ${formatScore(save.highs[loc.id])}</small>`;
+      button.addEventListener("click", () => {
+        selectedLocation = index;
+        renderLocations();
+        setTimeout(() => startRound(index), 140);
+      });
+      grid.appendChild(button);
+    });
+  }
+
+  function upgradeCost(upgrade) {
+    const level = save.upgrades[upgrade.id];
+    return Math.round(upgrade.base * (1 + level * .76));
+  }
+
+  function renderGarage() {
+    $("garageBank").textContent = `£${save.bank}`;
+    const grid = $("upgradeGrid");
+    grid.innerHTML = "";
+    UPGRADES.forEach((upgrade) => {
+      const level = save.upgrades[upgrade.id];
+      const cost = upgradeCost(upgrade);
+      const maxed = level >= 4;
+      const card = document.createElement("article");
+      card.className = "upgrade-card";
+      card.innerHTML = `<div class="upgrade-icon">${upgrade.icon}</div><div><h3>${upgrade.name}</h3><p>${upgrade.desc}</p><div class="level-pips">${[0,1,2,3].map(i => `<i class="${i < level ? "on" : ""}"></i>`).join("")}</div></div><button class="buy-btn" ${maxed || save.bank < cost ? "disabled" : ""}>${maxed ? "MAX LEVEL" : `UPGRADE · £${cost}`}</button>`;
+      card.querySelector("button").addEventListener("click", () => buyUpgrade(upgrade));
+      grid.appendChild(card);
+    });
+  }
+
+  function buyUpgrade(upgrade) {
+    const level = save.upgrades[upgrade.id];
+    const cost = upgradeCost(upgrade);
+    if (level >= 4 || save.bank < cost) return;
+    save.bank -= cost;
+    save.upgrades[upgrade.id] += 1;
+    persist();
+    playTone("buy");
+    showToast(`${upgrade.name.toUpperCase()} UPGRADED`, "good");
+    renderGarage();
+    refreshHeader();
+  }
+
+  function openLocations() {
+    mode = "menu";
+    renderLocations();
+    showScreen("locationScreen");
+    refreshHeader();
+  }
+
+  function openGarage() {
+    mode = "menu";
+    renderGarage();
+    showScreen("garageScreen");
+    refreshHeader();
+  }
+
+  function startRound(index) {
+    selectedLocation = index;
+    const loc = LOCATIONS[index];
+    game = {
+      loc,
+      score: 0,
+      cash: 0,
+      time: loc.duration,
+      combo: 0,
+      bestCombo: 0,
+      served: 0,
+      lost: 0,
+      spawnTimer: .7,
+      customers: [],
+      prep: [],
+      particles: [],
+      shake: 0,
+      ended: false,
+      elapsed: 0
+    };
+    mode = "playing";
+    showScreen(null);
+    updateButtons();
+    updateQueueUI();
+    refreshHeader();
+    showToast(`${loc.name.toUpperCase()} · HATCH OPEN`, "good");
+    playTone("buy");
+  }
+
+  function endRound(quit = false) {
+    if (!game || game.ended) return;
+    game.ended = true;
+    const loc = game.loc;
+    const beforeCareer = careerBest();
+    const previousHigh = save.highs[loc.id] || 0;
+    if (!quit) {
+      save.bank += game.cash;
+      save.highs[loc.id] = Math.max(previousHigh, Math.round(game.score));
+      save.career = Math.max(save.career, Math.round(game.score));
+    }
+    persist();
+    mode = "results";
+    $("resultEyebrow").textContent = quit ? "HATCH CLOSED EARLY" : "SHIFT COMPLETE";
+    $("resultsHeading").textContent = quit ? "PACKING UP?" : game.score >= loc.unlock + 3500 ? "WHAT A ROUND!" : "NICE WORK!";
+    $("finalScore").textContent = formatScore(game.score);
+    $("servedResult").textContent = game.served;
+    $("comboResult").textContent = `x${Math.max(1, game.bestCombo)}`;
+    $("cashResult").textContent = `£${quit ? 0 : game.cash}`;
+    $("newBest").classList.toggle("hidden", quit || game.score <= previousHigh);
+    const afterCareer = careerBest();
+    const newlyUnlocked = LOCATIONS.find((place) => place.unlock > beforeCareer && place.unlock <= afterCareer);
+    const unlock = $("unlockNotice");
+    unlock.classList.toggle("hidden", !newlyUnlocked);
+    unlock.textContent = newlyUnlocked ? `NEW PITCH UNLOCKED · ${newlyUnlocked.name.toUpperCase()}` : "";
+    showScreen("resultsScreen");
+    refreshHeader();
+  }
+
+  function addCustomer() {
+    if (!game || game.customers.length >= maxQueue()) return false;
+    const locIndex = LOCATIONS.indexOf(game.loc);
+    let pool = PRODUCTS;
+    if (locIndex === 0 && game.elapsed < 12) pool = PRODUCTS.slice(0, 2);
+    const product = pool[Math.floor(Math.random() * pool.length)];
+    const patienceBoost = 1 + save.upgrades.hatch * .055 + save.upgrades.till * .04;
+    const maxPatience = game.loc.patience * patienceBoost * (.88 + Math.random() * .28);
+    game.customers.push({
+      id: `${Date.now()}-${Math.random()}`,
+      order: product.id,
+      patience: maxPatience,
+      maxPatience,
+      look: customerLooks[Math.floor(Math.random() * customerLooks.length)],
+      phase: Math.random() * Math.PI * 2,
+      entering: 1
+    });
+    updateQueueUI();
+    return true;
+  }
+
+  function prepDuration(product) {
+    let speed = 1 + save.upgrades.power * .08;
+    if (product.id === "whippy" || product.id === "flake") speed += save.upgrades.machine * .13;
+    if (product.id === "sundae" || product.id === "lolly") speed += save.upgrades.freezer * .12;
+    return Math.max(.38, product.prep / speed);
+  }
+
+  function startProduct(productId) {
+    if (mode !== "playing" || !game || game.ended) return;
+    const product = PRODUCTS.find(p => p.id === productId);
+    const waiting = game.customers.find(c => c.order === productId && !game.prep.some(p => p.targetId === c.id));
+    if (!waiting) {
+      mistake("NO ONE ORDERED THAT!");
+      return;
+    }
+    if (game.prep.length >= prepSlots()) {
+      showToast("ALL PREP STATIONS ARE BUSY", "bad");
+      playTone("bad");
+      return;
+    }
+    game.prep.push({ type: productId, targetId: waiting.id, elapsed: 0, duration: prepDuration(product) });
+    playTone("tap");
+    updateButtons();
+  }
+
+  function mistake(message) {
+    if (!game) return;
+    game.combo = 0;
+    game.score = Math.max(0, game.score - 60);
+    game.shake = .25;
+    game.customers.forEach(c => { c.patience = Math.max(.4, c.patience - .45); });
+    showToast(message, "bad");
+    playTone("bad");
+    refreshHeader();
+  }
+
+  function serveCustomer(targetId, productId) {
+    let index = game.customers.findIndex(c => c.id === targetId && c.order === productId);
+    if (index < 0) index = game.customers.findIndex(c => c.order === productId);
+    if (index < 0) {
+      mistake("ORDER LEFT THE QUEUE");
+      return;
+    }
+    const customer = game.customers[index];
+    const product = PRODUCTS.find(p => p.id === productId);
+    const patienceRatio = customer.patience / customer.maxPatience;
+    game.combo += 1;
+    game.bestCombo = Math.max(game.bestCombo, game.combo);
+    const comboMult = Math.min(3, 1 + Math.floor(game.combo / 4) * .25);
+    const fastBonus = Math.round(patienceRatio * 70);
+    const points = Math.round((product.points + fastBonus) * game.loc.mult * comboMult);
+    const tipChance = Math.min(.9, .2 + patienceRatio * .42 + save.upgrades.till * .07);
+    let tip = Math.random() < tipChance ? 1 + Math.floor(save.upgrades.till / 2) : 0;
+    if ((productId === "sundae" || productId === "lolly") && save.upgrades.freezer >= 2 && Math.random() < .35) tip += 1;
+    game.score += points;
+    game.cash += product.price + tip;
+    game.served += 1;
+    game.customers.splice(index, 1);
+    game.particles.push({ x: 695 + index * 58, y: 225, life: 1, text: `+${points}`, color: patienceRatio > .6 ? "#ffd84d" : "#fffdf4" });
+    showToast(tip ? `LOVELY! +${points} · £${tip} TIP` : `SERVED! +${points}`, "good");
+    playTone("serve");
+    updateQueueUI();
+    refreshHeader();
+  }
+
+  function loseCustomer(index) {
+    game.customers.splice(index, 1);
+    game.combo = 0;
+    game.lost += 1;
+    game.score = Math.max(0, game.score - 85);
+    game.shake = .2;
+    game.particles.push({ x: 760, y: 240, life: 1, text: "TOO SLOW!", color: "#ff8c8c" });
+    playTone("bad");
+    updateQueueUI();
+    refreshHeader();
+  }
+
+  function updateButtons() {
+    const canUse = mode === "playing" && game && game.prep.length < prepSlots();
+    document.querySelectorAll(".product-btn").forEach((button) => {
+      const type = button.dataset.product;
+      const busy = game && game.prep.some(item => item.type === type);
+      button.disabled = !canUse;
+      button.classList.toggle("busy", !!busy);
+    });
+  }
+
+  function updateQueueUI() {
+    const count = game ? game.customers.length : 0;
+    const max = maxQueue();
+    $("queueCount").textContent = `${count} / ${max}`;
+    const pips = $("queuePips");
+    pips.innerHTML = Array.from({ length: max }, (_, i) => `<i class="${i < count ? "on" : ""}"></i>`).join("");
+  }
+
+  function updateGame(dt) {
+    if (mode !== "playing" || !game || game.ended) return;
+    game.elapsed += dt;
+    game.time -= dt;
+    game.spawnTimer -= dt;
+    game.shake = Math.max(0, game.shake - dt);
+
+    if (game.spawnTimer <= 0) {
+      const added = addCustomer();
+      const rush = game.loc.id === "match" && game.time < 42 && game.time > 25 ? .68 : 1;
+      game.spawnTimer = added ? game.loc.spawn * rush * (.84 + Math.random() * .32) : .8;
+    }
+
+    const patienceRate = 1 - save.upgrades.till * .025;
+    for (let i = game.customers.length - 1; i >= 0; i--) {
+      const customer = game.customers[i];
+      customer.patience -= dt * patienceRate;
+      customer.entering = Math.max(0, customer.entering - dt * 2.6);
+      if (customer.patience <= 0) loseCustomer(i);
+    }
+
+    for (let i = game.prep.length - 1; i >= 0; i--) {
+      const item = game.prep[i];
+      item.elapsed += dt;
+      if (item.elapsed >= item.duration) {
+        game.prep.splice(i, 1);
+        serveCustomer(item.targetId, item.type);
+      }
+    }
+
+    game.particles.forEach(p => { p.life -= dt; p.y -= dt * 24; });
+    game.particles = game.particles.filter(p => p.life > 0);
+    updateButtons();
+    refreshHeader();
+    if (game.time <= 0) endRound(false);
+  }
+
+  function rect(c, x, y, w, h, color) { c.fillStyle = color; c.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); }
+  function line(c, x1, y1, x2, y2, color, width = 2) { c.strokeStyle = color; c.lineWidth = width; c.beginPath(); c.moveTo(Math.round(x1), Math.round(y1)); c.lineTo(Math.round(x2), Math.round(y2)); c.stroke(); }
+
+  function pixelText(c, text, x, y, size, color, align = "left") {
+    c.save();
+    c.fillStyle = color;
+    c.textAlign = align;
+    c.textBaseline = "middle";
+    c.font = `400 ${size}px "Changa One", Impact, sans-serif`;
+    c.fillText(text, x, y);
+    c.restore();
+  }
+
+  function drawTreat(c, type, x, y, s = 1) {
+    c.save();
+    c.translate(Math.round(x), Math.round(y));
+    c.scale(s, s);
+    if (type === "lolly") {
+      rect(c, -3, 9, 6, 13, "#b9813e");
+      rect(c, -10, -17, 20, 9, "#e93448");
+      rect(c, -10, -8, 20, 9, "#fffdf4");
+      rect(c, -10, 1, 20, 9, "#33a8e8");
+      rect(c, -7, -20, 14, 3, "#e93448");
+    } else if (type === "sundae") {
+      rect(c, -13, 0, 26, 15, "#74bfe8");
+      rect(c, -10, 15, 20, 4, "#10243f");
+      rect(c, -10, -4, 20, 9, "#fffdf4");
+      rect(c, -7, -11, 14, 7, "#fffdf4");
+      rect(c, -4, -16, 8, 5, "#fffdf4");
+      rect(c, 4, -9, 5, 6, "#e93471");
+      rect(c, -9, -2, 5, 4, "#e93471");
+    } else {
+      c.fillStyle = "#f2ad3c";
+      c.beginPath(); c.moveTo(-9, 5); c.lineTo(9, 5); c.lineTo(0, 23); c.fill();
+      line(c, -6, 9, 5, 15, "#a96827", 2);
+      line(c, 6, 9, -3, 17, "#a96827", 2);
+      rect(c, -12, -3, 24, 9, "#fffdf4");
+      rect(c, -9, -10, 18, 8, "#fffdf4");
+      rect(c, -5, -15, 10, 5, "#fffdf4");
+      if (type === "flake") {
+        c.save(); c.rotate(.23); rect(c, 5, -20, 5, 22, "#6c3527"); c.restore();
+      }
+    }
+    c.restore();
+  }
+
+  function drawCloud(x, y, s = 1) {
+    rect(ctx, x, y, 80*s, 13*s, "#fffdf4");
+    rect(ctx, x+15*s, y-11*s, 43*s, 11*s, "#fffdf4");
+    rect(ctx, x+29*s, y-19*s, 24*s, 10*s, "#fffdf4");
+    rect(ctx, x+8*s, y+13*s, 58*s, 4*s, "#d7ecf6");
+  }
+
+  function drawBackground(loc) {
+    rect(ctx, 0, 0, 960, 540, loc.scene);
+    if (loc.id === "city") {
+      rect(ctx, 0, 0, 960, 270, "#372c63");
+      rect(ctx, 0, 225, 960, 315, "#203d4e");
+      for (let i=0;i<13;i++) {
+        const h = 65 + (i%4)*25;
+        rect(ctx, i*78, 235-h, 58, h, i%2 ? "#213253" : "#172841");
+        for (let j=0;j<4;j++) rect(ctx, i*78+9+(j%2)*22, 190-h+j*24, 7, 9, (i+j)%3 ? "#ffd84d" : "#6c6fa4");
+      }
+      rect(ctx, 0, 320, 960, 220, "#2c6b59");
+      rect(ctx, 0, 440, 960, 100, "#44505f");
+      for (let i=0;i<10;i++) rect(ctx, i*112-20, 468, 62, 5, "#697483");
+      rect(ctx, 30, 42, 5, 5, "#fff4a5"); rect(ctx, 188, 72, 4, 4, "#fff4a5"); rect(ctx, 774, 48, 5, 5, "#fff4a5");
+    } else {
+      drawCloud(90, 65, 1); drawCloud(610, 45, .8);
+      if (loc.id === "whitby") {
+        rect(ctx, 0, 255, 960, 120, "#177fb6");
+        for (let i=0;i<12;i++) rect(ctx, i*96 + (i%2)*20, 280+(i%3)*16, 52, 4, "#8ed9ef");
+        rect(ctx, 0, 366, 960, 174, "#c7a77c");
+        rect(ctx, 0, 356, 960, 18, "#705b4d");
+        for (let i=0;i<18;i++) rect(ctx, i*59, 390+(i%3)*27, 46, 4, "#a58463");
+        rect(ctx, 820, 145, 8, 110, "#465773"); rect(ctx, 860, 145, 8, 110, "#465773");
+        line(ctx, 808,145,842,100,"#465773",7); line(ctx, 842,100,879,145,"#465773",7); line(ctx,815,183,870,183,"#465773",5);
+      } else if (loc.id === "village") {
+        rect(ctx, 0, 250, 960, 290, "#4cae62");
+        rect(ctx, 0, 357, 960, 183, "#77c46e");
+        for (let i=0;i<15;i++) rect(ctx, i*80, 421+(i%3)*17, 5, 13, "#3e9850");
+        line(ctx, 0,110,960,175,"#fffdf4",3);
+        const flags=["#e93448","#ffd84d","#33a8e8","#fffdf4"];
+        for(let i=0;i<18;i++){ctx.fillStyle=flags[i%4];ctx.beginPath();ctx.moveTo(i*58+5,114+i*4);ctx.lineTo(i*58+24,116+i*4);ctx.lineTo(i*58+15,134+i*4);ctx.fill();}
+        rect(ctx, 755, 177, 120, 75, "#fffdf4");
+        ctx.fillStyle="#e93448";ctx.beginPath();ctx.moveTo(735,178);ctx.lineTo(895,178);ctx.lineTo(815,123);ctx.fill();
+      } else {
+        rect(ctx, 0, 218, 960, 322, "#75889b");
+        rect(ctx, 0, 308, 960, 232, "#4b9a5e");
+        for(let i=0;i<20;i++){rect(ctx,i*50,168+(i%2)*15,45,105,"#243c5b");rect(ctx,i*50+7,184+(i%2)*15,7,7,"#ffd84d");rect(ctx,i*50+27,184+(i%2)*15,7,7,"#fffdf4");}
+        rect(ctx,0,270,960,12,"#e9ad37");
+        pixelText(ctx,"MATCH DAY",770,130,28,"#fffdf4","center");
+      }
+    }
+  }
+
+  function drawVan() {
+    const x=34, y=225;
+    rect(ctx,x+35,y+35,510,202,"#10243f");
+    rect(ctx,x+42,y+27,494,194,"#fffdf4");
+    rect(ctx,x+173,y+1,363,220,"#fffdf4");
+    ctx.fillStyle="#fffdf4";ctx.beginPath();ctx.moveTo(x+42,y+27);ctx.lineTo(x+173,y+1);ctx.lineTo(x+173,y+220);ctx.lineTo(x+42,y+220);ctx.fill();
+    rect(ctx,x+51,y+73,118,76,"#1f5e83");
+    ctx.fillStyle="#6ec5e9";ctx.beginPath();ctx.moveTo(x+59,y+78);ctx.lineTo(x+154,y+57);ctx.lineTo(x+154,y+132);ctx.lineTo(x+76,y+132);ctx.fill();
+    rect(ctx,x+159,y+58,8,95,"#10243f");
+    line(ctx,x+55,y+154,x+164,y+154,"#10243f",5);
+    rect(ctx,x+42,y+164,494,31,"#e93448"); rect(ctx,x+42,y+195,494,13,"#33a8e8");
+    rect(ctx,x+233,y+35,246,122,"#10243f");
+    rect(ctx,x+241,y+43,230,106,"#e5f2f7");
+    rect(ctx,x+241,y+43,230,15,"#e93448");
+    for(let i=0;i<8;i++) rect(ctx,x+241+i*29,y+43,14,15,i%3===1?"#33a8e8":i%3===2?"#fffdf4":"#e93448");
+    rect(ctx,x+260,y+72,59,68,"#b8c8d1"); rect(ctx,x+269,y+81,41,19,"#708596");
+    rect(ctx,x+276,y+105,5,27,"#10243f"); rect(ctx,x+298,y+105,5,27,"#10243f");
+    rect(ctx,x+339,y+83,83,57,"#fffdf4");
+    drawTreat(ctx,"whippy",x+357,y+111,.65); drawTreat(ctx,"flake",x+382,y+111,.65); drawTreat(ctx,"lolly",x+406,y+111,.65);
+    rect(ctx,x+486,y+44,41,105,"#dce9ee");
+    rect(ctx,x+91,y+208,61,25,"#10243f"); rect(ctx,x+430,y+208,61,25,"#10243f");
+    ctx.fillStyle="#10243f";ctx.beginPath();ctx.arc(x+121,y+220,38,0,Math.PI*2);ctx.arc(x+460,y+220,38,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle="#ced8df";ctx.beginPath();ctx.arc(x+121,y+220,20,0,Math.PI*2);ctx.arc(x+460,y+220,20,0,Math.PI*2);ctx.fill();
+    rect(ctx,x+25,y+192,40,24,"#d6e0e5"); rect(ctx,x+505,y+191,40,25,"#d6e0e5");
+    rect(ctx,x+46,y+180,16,10,"#ffd84d");
+    rect(ctx,x+181,y+18,328,17,"#10243f");
+    pixelText(ctx,"WHITBY WHIPPY",x+345,y+27,18,"#fffdf4","center");
+    pixelText(ctx,"BRITISH COACHBUILT",x+345,y+183,11,"#fffdf4","center");
+
+    if (game) {
+      const slots = prepSlots();
+      game.prep.forEach((item,i) => {
+        const px=x+248+i*78, py=y-23;
+        rect(ctx,px,py,68,18,"#10243f");
+        rect(ctx,px+3,py+3,62*(item.elapsed/item.duration),12,"#54d69b");
+        drawTreat(ctx,item.type,px+34,py-16,.52);
+      });
+      for(let i=game.prep.length;i<slots;i++){
+        rect(ctx,x+248+i*78,y-23,68,18,"#10243f"); rect(ctx,x+251+i*78,y-20,62,12,"#506276");
+      }
+    }
+  }
+
+  function drawCustomer(customer, index, total) {
+    const spacing = Math.min(76, 310 / Math.max(1, total));
+    const x = 650 + index * spacing + customer.entering * 130;
+    const bob = Math.round(Math.sin((game.elapsed + customer.phase) * 4) * 2);
+    const y = 372 + bob;
+    const [skin,hair,shirt] = customer.look;
+    rect(ctx,x-15,y-63,30,25,skin);
+    rect(ctx,x-17,y-68,34,11,hair); rect(ctx,x-17,y-60,7,15,hair);
+    rect(ctx,x-18,y-38,36,43,shirt);
+    rect(ctx,x-21,y+5,15,38,"#263b5c"); rect(ctx,x+6,y+5,15,38,"#263b5c");
+    rect(ctx,x-22,y+41,19,7,"#10243f"); rect(ctx,x+4,y+41,19,7,"#10243f");
+    rect(ctx,x-4,y-53,4,4,"#10243f"); rect(ctx,x+7,y-53,4,4,"#10243f");
+    const bubbleX=x-28,bubbleY=y-126;
+    rect(ctx,bubbleX-4,bubbleY-4,56,55,"#10243f"); rect(ctx,bubbleX,bubbleY,48,47,"#fffdf4");
+    ctx.fillStyle="#10243f";ctx.beginPath();ctx.moveTo(x+8,bubbleY+51);ctx.lineTo(x+20,bubbleY+51);ctx.lineTo(x+13,bubbleY+61);ctx.fill();
+    drawTreat(ctx,customer.order,x-4,bubbleY+23,.62);
+    const ratio=Math.max(0,customer.patience/customer.maxPatience);
+    rect(ctx,x-23,y+55,47,8,"#10243f");
+    rect(ctx,x-21,y+57,43*ratio,4,ratio>.55?"#54d69b":ratio>.25?"#ffd84d":"#e93448");
+  }
+
+  function renderGame() {
+    const loc = game ? game.loc : LOCATIONS[selectedLocation];
+    ctx.save();
+    if (game && game.shake > 0) ctx.translate((Math.random()-.5)*8,(Math.random()-.5)*5);
+    drawBackground(loc);
+    drawVan();
+    if (game) game.customers.forEach((customer,i) => drawCustomer(customer,i,game.customers.length));
+    rect(ctx,0,486,960,54,"#10243f");
+    rect(ctx,0,486,960,5,"#e93448");
+    if (game) {
+      pixelText(ctx,game.loc.name.toUpperCase(),24,510,19,"#fffdf4");
+      pixelText(ctx,`${game.served} SERVED`,936,510,17,"#ffd84d","right");
+      if (game.combo >= 4) pixelText(ctx,`COMBO x${game.combo}`,625,510,21,"#54d69b","center");
+      game.particles.forEach(p => { ctx.globalAlpha=Math.max(0,p.life);pixelText(ctx,p.text,p.x,p.y,18,p.color,"center");ctx.globalAlpha=1; });
+      if (game.loc.id === "match" && game.time < 42 && game.time > 25) {
+        rect(ctx,710,16,225,35,"#e93448"); pixelText(ctx,"HALF-TIME RUSH!",822,34,20,"#fffdf4","center");
+      }
+    }
+    ctx.restore();
+  }
+
+  function loop(now) {
+    const dt = Math.min(.05, (now - lastTime) / 1000);
+    lastTime = now;
+    updateGame(dt);
+    renderGame();
+    requestAnimationFrame(loop);
+  }
+
+  function pauseGame() {
+    if (mode !== "playing") return;
+    mode = "paused";
+    showScreen("pauseScreen");
+    updateButtons();
+    refreshHeader();
+  }
+
+  function resumeGame() {
+    if (mode !== "paused") return;
+    mode = "playing";
+    showScreen(null);
+    lastTime = performance.now();
+    updateButtons();
+    refreshHeader();
+  }
+
+  $("playBtn").addEventListener("click", () => {
+    if (!save.helpSeen) {
+      previousScreen = "locationScreen";
+      save.helpSeen = true; persist();
+      showScreen("helpScreen");
+    } else openLocations();
+  });
+  $("howBtn").addEventListener("click", () => { previousScreen = "titleScreen"; showScreen("helpScreen"); });
+  $("helpBackBtn").addEventListener("click", () => previousScreen === "locationScreen" ? openLocations() : showScreen("titleScreen"));
+  $("backTitleBtn").addEventListener("click", () => { mode="title"; showScreen("titleScreen"); refreshHeader(); });
+  $("brandBtn").addEventListener("click", () => {
+    if (mode === "playing") { pauseGame(); return; }
+    mode="title"; showScreen("titleScreen"); refreshHeader();
+  });
+  $("garageBtn").addEventListener("click", openGarage);
+  $("garageBackBtn").addEventListener("click", openLocations);
+  $("resultsGarageBtn").addEventListener("click", openGarage);
+  $("locationsBtn").addEventListener("click", openLocations);
+  $("againBtn").addEventListener("click", () => startRound(selectedLocation));
+  $("pauseBtn").addEventListener("click", pauseGame);
+  $("resumeBtn").addEventListener("click", resumeGame);
+  $("quitBtn").addEventListener("click", () => endRound(true));
+  $("soundBtn").addEventListener("click", () => { save.sound=!save.sound;persist();refreshHeader();if(save.sound)playTone("buy"); });
+
+  document.addEventListener("keydown", (event) => {
+    if (["INPUT","TEXTAREA","SELECT"].includes(event.target.tagName)) return;
+    const product = PRODUCTS.find(p => p.key === event.key);
+    if (product) { event.preventDefault(); startProduct(product.id); }
+    if (event.code === "Space" && mode === "playing") { event.preventDefault(); const first=game.customers[0]; if(first)startProduct(first.order); }
+    if (event.key === "Escape") { if (mode === "playing") pauseGame(); else if (mode === "paused") resumeGame(); }
+  });
+
+  document.addEventListener("visibilitychange", () => { if (document.hidden && mode === "playing") pauseGame(); });
+
+  buildProductButtons();
+  updateQueueUI();
+  refreshHeader();
+  showScreen("titleScreen");
+  requestAnimationFrame(loop);
+})();
