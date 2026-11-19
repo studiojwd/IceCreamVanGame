@@ -16,11 +16,20 @@
   ];
 
   const LOCATIONS = [
-    { id: "whitby", name: "Whitby Harbour", detail: "SEA BREEZE · STEADY QUEUE", unlock: 0, duration: 75, spawn: 3.5, patience: 18, mult: 1, scene: "#38aee8" },
-    { id: "village", name: "Village Fête", detail: "BUNTING · FAMILY RUSH", unlock: 2400, duration: 75, spawn: 3, patience: 17, mult: 1.15, scene: "#54be75" },
-    { id: "match", name: "Match Day", detail: "HALF-TIME · BIG SURGE", unlock: 6500, duration: 80, spawn: 2.45, patience: 15.5, mult: 1.35, scene: "#e9ad37" },
-    { id: "city", name: "City Lights", detail: "NIGHT SHIFT · EXPERT PACE", unlock: 11500, duration: 85, spawn: 2.05, patience: 14.5, mult: 1.6, scene: "#7d63bf" }
+    { id: "seaside", name: "Seaside", detail: "SEA BREEZE · STEADY QUEUE", unlock: 0, duration: 75, spawn: 3.5, patience: 18, mult: 1, scene: "#38aee8", asset: "assets/location-seaside.jpg" },
+    { id: "village", name: "Village Fête", detail: "BUNTING · FAMILY RUSH", unlock: 2400, duration: 75, spawn: 3, patience: 17, mult: 1.15, scene: "#54be75", asset: "assets/location-village.jpg" },
+    { id: "football", name: "Football Match", detail: "HALF-TIME · BIG SURGE", unlock: 6500, duration: 80, spawn: 2.45, patience: 15.5, mult: 1.35, scene: "#e9ad37", asset: "assets/location-football.jpg" },
+    { id: "london", name: "London", detail: "WESTMINSTER · TOURIST RUSH", unlock: 11500, duration: 82, spawn: 2.2, patience: 15, mult: 1.55, scene: "#e36d55", asset: "assets/location-london.jpg" },
+    { id: "christmas", name: "Christmas", detail: "SNOWFALL · FESTIVE SPECIAL", unlock: 17500, duration: 85, spawn: 2.05, patience: 14.5, mult: 1.75, scene: "#5267b7", asset: "assets/location-christmas.jpg" },
+    { id: "market", name: "Evening Market", detail: "TWILIGHT · LATE-NIGHT CROWD", unlock: 25000, duration: 85, spawn: 1.85, patience: 13.5, mult: 1.95, scene: "#674f9c", asset: "assets/location-evening-market.jpg" },
+    { id: "sydney", name: "Sydney Opera House", detail: "HARBOURSIDE · WORLD TOUR", unlock: 36000, duration: 90, spawn: 1.7, patience: 12.5, mult: 2.2, scene: "#20a4de", asset: "assets/location-sydney.jpg" }
   ];
+
+  const locationImages = Object.fromEntries(LOCATIONS.map((location) => {
+    const image = new Image();
+    image.src = location.asset;
+    return [location.id, image];
+  }));
 
   const UPGRADES = [
     { id: "machine", icon: "M", name: "Soft-Serve Machine", desc: "Whips cones and 99s 13% faster per level.", base: 120 },
@@ -34,7 +43,7 @@
   const DEFAULT_SAVE = {
     bank: 0,
     career: 0,
-    highs: { whitby: 0, village: 0, match: 0, city: 0 },
+    highs: { seaside: 0, village: 0, football: 0, london: 0, christmas: 0, market: 0, sydney: 0 },
     upgrades: { machine: 0, heads: 0, freezer: 0, till: 0, hatch: 0, power: 0 },
     sound: true,
     helpSeen: false
@@ -44,10 +53,14 @@
     try {
       const raw = JSON.parse(localStorage.getItem("whitby-whippy-dash-save"));
       if (!raw) return structuredClone(DEFAULT_SAVE);
+      const migratedHighs = { ...(raw.highs || {}) };
+      if (!migratedHighs.seaside && migratedHighs.whitby) migratedHighs.seaside = migratedHighs.whitby;
+      if (!migratedHighs.football && migratedHighs.match) migratedHighs.football = migratedHighs.match;
+      if (!migratedHighs.london && migratedHighs.city) migratedHighs.london = migratedHighs.city;
       return {
         ...structuredClone(DEFAULT_SAVE),
         ...raw,
-        highs: { ...DEFAULT_SAVE.highs, ...(raw.highs || {}) },
+        highs: { ...DEFAULT_SAVE.highs, ...migratedHighs },
         upgrades: { ...DEFAULT_SAVE.upgrades, ...(raw.upgrades || {}) }
       };
     } catch (_) {
@@ -157,6 +170,7 @@
       const button = document.createElement("button");
       button.className = `location-card${index === selectedLocation ? " selected" : ""}`;
       button.style.setProperty("--scene", loc.scene);
+      button.style.backgroundImage = `url("${loc.asset}")`;
       button.disabled = !isOpen;
       button.innerHTML = `${isOpen ? "" : `<span class="lock">SCORE ${formatScore(loc.unlock)} TO UNLOCK</span>`}<strong>${loc.name}</strong><small>${loc.detail}</small><small class="record">BEST ${formatScore(save.highs[loc.id])}</small>`;
       button.addEventListener("click", () => {
@@ -400,7 +414,7 @@
 
     if (game.spawnTimer <= 0) {
       const added = addCustomer();
-      const rush = game.loc.id === "match" && game.time < 42 && game.time > 25 ? .68 : 1;
+      const rush = game.loc.id === "football" && game.time < 42 && game.time > 25 ? .68 : 1;
       game.spawnTimer = added ? game.loc.spawn * rush * (.84 + Math.random() * .32) : .8;
     }
 
@@ -524,6 +538,45 @@
     }
   }
 
+  function drawLocationArt(loc) {
+    const image = locationImages[loc.id];
+    if (image?.complete && image.naturalWidth) {
+      ctx.drawImage(image, 0, 0, 960, 540);
+    } else {
+      drawBackground(loc);
+    }
+
+    const shade = ctx.createLinearGradient(0, 250, 0, 500);
+    shade.addColorStop(0, "rgba(7,22,40,0)");
+    shade.addColorStop(1, "rgba(7,22,40,.44)");
+    ctx.fillStyle = shade;
+    ctx.fillRect(0, 250, 960, 250);
+  }
+
+  function drawPrepStatus() {
+    if (!game) return;
+    const slots = prepSlots();
+    const slotWidth = 86;
+    const gap = 8;
+    const totalWidth = slots * slotWidth + (slots - 1) * gap;
+    const startX = 500 - totalWidth / 2;
+    rect(ctx, startX - 100, 17, totalWidth + 111, 55, "rgba(7,22,40,.9)");
+    pixelText(ctx, "HATCH PREP", startX - 12, 45, 13, "#ffd84d", "right");
+
+    for (let i = 0; i < slots; i++) {
+      const item = game.prep[i];
+      const x = startX + i * (slotWidth + gap);
+      rect(ctx, x, 29, slotWidth, 31, "#10243f");
+      rect(ctx, x + 4, 33, slotWidth - 8, 23, "#506276");
+      if (item) {
+        rect(ctx, x + 4, 33, (slotWidth - 8) * Math.min(1, item.elapsed / item.duration), 23, "#54d69b");
+        drawTreat(ctx, item.type, x + slotWidth / 2, 43, .55);
+      } else {
+        pixelText(ctx, "READY", x + slotWidth / 2, 45, 12, "#d8e7ee", "center");
+      }
+    }
+  }
+
   function drawVan() {
     const x=34, y=225;
     rect(ctx,x+35,y+35,510,202,"#10243f");
@@ -592,8 +645,8 @@
     const loc = game ? game.loc : LOCATIONS[selectedLocation];
     ctx.save();
     if (game && game.shake > 0) ctx.translate((Math.random()-.5)*8,(Math.random()-.5)*5);
-    drawBackground(loc);
-    drawVan();
+    drawLocationArt(loc);
+    drawPrepStatus();
     if (game) game.customers.forEach((customer,i) => drawCustomer(customer,i,game.customers.length));
     rect(ctx,0,486,960,54,"#10243f");
     rect(ctx,0,486,960,5,"#e93448");
@@ -602,7 +655,7 @@
       pixelText(ctx,`${game.served} SERVED`,936,510,17,"#ffd84d","right");
       if (game.combo >= 4) pixelText(ctx,`COMBO x${game.combo}`,625,510,21,"#54d69b","center");
       game.particles.forEach(p => { ctx.globalAlpha=Math.max(0,p.life);pixelText(ctx,p.text,p.x,p.y,18,p.color,"center");ctx.globalAlpha=1; });
-      if (game.loc.id === "match" && game.time < 42 && game.time > 25) {
+      if (game.loc.id === "football" && game.time < 42 && game.time > 25) {
         rect(ctx,710,16,225,35,"#e93448"); pixelText(ctx,"HALF-TIME RUSH!",822,34,20,"#fffdf4","center");
       }
     }
