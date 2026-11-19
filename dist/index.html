@@ -103,10 +103,10 @@
           <p class="eyebrow">DRIVER'S HANDBOOK</p>
           <h2 id="helpHeading">KEEP THE QUEUE HAPPY</h2>
           <div class="help-steps">
-            <article><b>1</b><div><strong>READ THE BUBBLE</strong><p>Each customer shows the treat they want. Their patience bar is ticking.</p></div></article>
-            <article><b>2</b><div><strong>MAKE THE RIGHT TREAT</strong><p>Tap the matching hatch button, or use keys 1–4. Better kit prepares it faster.</p></div></article>
-            <article><b>3</b><div><strong>BUILD A COMBO</strong><p>Fast, correct orders build your multiplier. Wrong treats break the combo.</p></div></article>
-            <article><b>4</b><div><strong>UPGRADE &amp; TRAVEL</strong><p>Spend takings in the garage and unlock busier pitches with bigger scores.</p></div></article>
+            <article><b>1</b><div><strong>READ THE WHOLE BUBBLE</strong><p>Harder pitches include customers ordering two or three items. Finish every item before they leave.</p></div></article>
+            <article><b>2</b><div><strong>SWITCH MENU STATIONS</strong><p>Use the tabs for ice cream, cans, slushes and hot drinks. Keys 1–4 select the visible items.</p></div></article>
+            <article><b>3</b><div><strong>WATCH YOUR STOCK</strong><p>Cans are quick, but the fridge runs out. Restocking occupies a preparation slot.</p></div></article>
+            <article><b>4</b><div><strong>UPGRADE &amp; TRAVEL</strong><p>Improve each machine, handle group orders and unlock the complete world-tour menu.</p></div></article>
           </div>
           <button id="helpBackBtn" class="pixel-btn primary">GOT IT</button>
         </div>
@@ -126,7 +126,10 @@
 
     <section id="serviceDeck" class="service-deck" aria-label="Ice cream service controls">
       <div class="deck-label"><span>HATCH MENU</span><small>MATCH THE CUSTOMER'S ORDER</small></div>
-      <div id="productButtons" class="product-buttons"></div>
+      <div class="menu-console">
+        <div id="categoryTabs" class="category-tabs" aria-label="Menu categories"></div>
+        <div id="productButtons" class="product-buttons"></div>
+      </div>
       <div class="deck-meter">
         <small>QUEUE</small>
         <div class="queue-pips" id="queuePips"></div>

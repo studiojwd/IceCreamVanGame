@@ -169,6 +169,11 @@ h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
 .deck-label span, .deck-label small { display: block; }
 .deck-label span { font-family: "Changa One", Impact, sans-serif; font-size: 1.4rem; color: var(--red); }
 .deck-label small, .deck-meter small { font: 700 .62rem/1.3 "DM Mono", monospace; color: #61788c; }
+.menu-console { min-width: 0; }
+.category-tabs { display: flex; gap: 5px; margin-bottom: 7px; }
+.category-tab { min-height: 26px; flex: 1 1 0; padding: 5px 8px; border: 2px solid var(--ink); background: #dceaf0; color: var(--ink); font: 700 .61rem/1 "DM Mono", monospace; cursor: pointer; }
+.category-tab.active { background: var(--red); color: var(--paper); box-shadow: 2px 2px 0 var(--ink); }
+.category-tab:hover { background: var(--yellow); color: var(--ink); }
 .product-buttons { display: grid; grid-template-columns: repeat(4,1fr); gap: 9px; }
 .product-btn { position: relative; min-height: 64px; display: grid; grid-template-columns: 46px 1fr; gap: 7px; align-items: center; padding: 6px 9px; border: 3px solid var(--ink); background: #edf8fc; color: var(--ink); box-shadow: 4px 4px 0 var(--ink); cursor: pointer; overflow: hidden; text-align: left; }
 .product-btn:hover:not([disabled]) { transform: translate(2px,2px); box-shadow: 2px 2px 0 var(--ink); }
@@ -179,6 +184,8 @@ h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
 .product-btn .key { position: absolute; right: 3px; top: 3px; width: 17px; height: 17px; text-align: center; background: var(--ink); color: var(--paper); font: 500 .6rem/17px "DM Mono", monospace; }
 .product-btn[disabled] { filter: grayscale(1); opacity: .45; cursor: not-allowed; }
 .product-btn.busy { background: var(--yellow); }
+.restock-btn { background: #dff5e8; }
+.restock-icon { width: 42px; height: 42px; display: grid !important; place-items: center; border: 3px solid var(--ink); background: var(--mint); font: 700 1.5rem/1 "DM Mono", monospace; }
 .deck-meter { justify-self: end; min-width: 150px; }
 .queue-pips { display: flex; gap: 3px; margin: 5px 0; }
 .queue-pips i { width: 14px; height: 10px; border: 2px solid var(--ink); background: #d5e0e6; }
@@ -208,6 +215,8 @@ h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
   .service-deck { grid-template-columns: 1fr; gap: 8px; padding: 9px 12px 12px; }
   .deck-label, .deck-meter { display: none; }
   .product-buttons { width: 100%; }
+  .category-tabs { margin-bottom: 4px; }
+  .category-tab { min-height: 25px; padding-inline: 4px; font-size: .52rem; }
   .product-btn { min-height: 58px; grid-template-columns: 38px 1fr; padding: 5px; }
   .product-btn canvas { width: 36px; height: 36px; }
   .product-btn span small { display: none; }
