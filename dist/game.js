@@ -41,6 +41,43 @@
   }));
   const productImageCrops = new Map();
 
+  const EQUIPMENT_ASSETS = {
+    slush: "assets/equipment/slush-machine-twin.png",
+    slushUpgraded: "assets/equipment/slush-machine-twin-upgraded.png",
+    cups: "assets/equipment/cup-lid-dispenser.png",
+    cupsUpgraded: "assets/equipment/cup-lid-dispenser-upgraded.png",
+    boiler: "assets/equipment/hot-chocolate-boiler.png",
+    boilerUpgraded: "assets/equipment/hot-chocolate-boiler-upgraded.png",
+    fridge: "assets/equipment/drinks-fridge.png",
+    fridgeUpgraded: "assets/equipment/drinks-fridge-upgraded.png",
+    restockBox: "assets/equipment/restocking-box.png",
+    canCrate: "assets/equipment/can-crate.png"
+  };
+
+  const EFFECT_ASSETS = {
+    steam: "assets/effects/steam-puff.png",
+    fizz: "assets/effects/fizzy-can-opening.png",
+    slushSplash: "assets/effects/slush-splash-mixed.png",
+    coin: "assets/effects/coin.png",
+    soldOut: "assets/effects/sold-out-indicator.png",
+    wrongOrder: "assets/effects/wrong-order-reaction.png",
+    tipJar: "assets/effects/tip-jar.png",
+    snow: "assets/effects/snow-burst.png",
+    heatShimmer: "assets/effects/sydney-heat-shimmer.png",
+    festiveLights: "assets/effects/festive-lights.png"
+  };
+
+  function loadImageSet(assets) {
+    return Object.fromEntries(Object.entries(assets).map(([id, source]) => {
+      const image = new Image();
+      image.src = source;
+      return [id, image];
+    }));
+  }
+
+  const equipmentImages = loadImageSet(EQUIPMENT_ASSETS);
+  const effectImages = loadImageSet(EFFECT_ASSETS);
+
   const PRODUCT_GROUPS = {
     ice: { label: "ICE CREAM", short: "ICE" },
     cans: { label: "COLD CANS", short: "CANS" },
@@ -67,11 +104,11 @@
   const UPGRADES = [
     { id: "machine", icon: "M", name: "Soft-Serve Machine", desc: "Whips cones and 99s 13% faster per level.", base: 120 },
     { id: "heads", icon: "2×", name: "Twin-Head Setup", desc: "Adds simultaneous prep slots at levels 1 and 3.", base: 180 },
-    { id: "freezer", icon: "F", name: "Display Freezer", desc: "Adds can stock and serves cans, lollies and sundaes faster.", base: 135 },
-    { id: "slushMachine", icon: "S", name: "Slush Machine", desc: "Cuts slush preparation time by 13% per level.", base: 190 },
-    { id: "boiler", icon: "H", name: "Chocolate Boiler", desc: "Pours hot chocolate 13% faster per level.", base: 190 },
+    { id: "freezer", icon: "F", name: "Display Freezer", desc: "Adds can stock and serves cans, lollies and sundaes faster.", base: 135, equipment: ["fridge", "fridgeUpgraded"] },
+    { id: "slushMachine", icon: "S", name: "Slush Machine", desc: "Cuts slush preparation time by 13% per level.", base: 190, equipment: ["slush", "slushUpgraded"] },
+    { id: "boiler", icon: "H", name: "Chocolate Boiler", desc: "Pours hot chocolate 13% faster per level.", base: 190, equipment: ["boiler", "boilerUpgraded"] },
     { id: "till", icon: "£", name: "Contactless Till", desc: "Faster payment keeps patience high and lifts every tip.", base: 150 },
-    { id: "hatch", icon: "H", name: "Serving Hatch", desc: "A wider hatch holds a larger, more patient queue.", base: 165 },
+    { id: "hatch", icon: "H", name: "Serving Hatch", desc: "A wider hatch holds a larger, more patient queue.", base: 165, equipment: ["cups", "cupsUpgraded"] },
     { id: "power", icon: "⚡", name: "Quiet Generator", desc: "More reliable power speeds up every order.", base: 210 }
   ];
 
@@ -220,7 +257,7 @@
       restock.id = "restockBtn";
       restock.className = "product-btn restock-btn";
       restock.setAttribute("aria-label", "Restock canned drinks");
-      restock.innerHTML = `<span class="restock-icon">+</span><span><strong>RESTOCK</strong><small>REFILL THE FRIDGE</small></span>`;
+      restock.innerHTML = `<img class="restock-art" src="${EQUIPMENT_ASSETS.restockBox}" alt="" aria-hidden="true"><span><strong>RESTOCK</strong><small>REFILL THE FRIDGE</small></span>`;
       restock.addEventListener("click", restockCans);
       holder.appendChild(restock);
     }
@@ -272,8 +309,10 @@
       const cost = upgradeCost(upgrade);
       const maxed = level >= 4;
       const card = document.createElement("article");
-      card.className = "upgrade-card";
-      card.innerHTML = `<div class="upgrade-icon">${upgrade.icon}</div><div><h3>${upgrade.name}</h3><p>${upgrade.desc}</p><div class="level-pips">${[0,1,2,3].map(i => `<i class="${i < level ? "on" : ""}"></i>`).join("")}</div></div><button class="buy-btn" ${maxed || save.bank < cost ? "disabled" : ""}>${maxed ? "MAX LEVEL" : `UPGRADE · £${cost}`}</button>`;
+      card.className = `upgrade-card${upgrade.equipment ? " has-art" : ""}`;
+      const equipmentId = upgrade.equipment?.[level >= 2 ? 1 : 0];
+      const equipmentArt = equipmentId ? `<img class="upgrade-art" src="${EQUIPMENT_ASSETS[equipmentId]}" alt="" aria-hidden="true">` : upgrade.icon;
+      card.innerHTML = `<div class="upgrade-icon${equipmentId ? " art" : ""}">${equipmentArt}</div><div><h3>${upgrade.name}</h3><p>${upgrade.desc}</p><div class="level-pips">${[0,1,2,3].map(i => `<i class="${i < level ? "on" : ""}"></i>`).join("")}</div></div><button class="buy-btn" ${maxed || save.bank < cost ? "disabled" : ""}>${maxed ? "MAX LEVEL" : `UPGRADE · £${cost}`}</button>`;
       card.querySelector("button").addEventListener("click", () => buyUpgrade(upgrade));
       grid.appendChild(card);
     });
@@ -420,6 +459,7 @@
     const product = PRODUCTS.find(p => p.id === productId);
     if (product.group === "cans" && game.canStock[productId] <= 0) {
       showToast(`${product.short} SOLD OUT · RESTOCK THE FRIDGE`, "bad");
+      pushEffect("soldOut", 760, 235, 78, 1.1, 6);
       playTone("bad");
       return;
     }
@@ -458,8 +498,14 @@
     game.canStock = { cola: stock, lemonade: stock, orange: stock, water: stock };
     buildProductButtons();
     updateButtons();
+    pushEffect("fizz", 760, 235, 70, 1, 8);
     showToast("DRINKS FRIDGE FULL", "good");
     playTone("buy");
+  }
+
+  function pushEffect(effect, x, y, size = 64, life = 1, rise = 14, vx = 0) {
+    if (!game) return;
+    game.particles.push({ effect, x, y, size, life, maxLife: life, rise, vx });
   }
 
   function mistake(message, cashPenalty = 0) {
@@ -469,6 +515,7 @@
     game.cash = Math.max(0, game.cash - cashPenalty);
     game.shake = .25;
     game.customers.forEach(c => { c.patience = Math.max(.4, c.patience - .45); });
+    pushEffect("wrongOrder", 760, 235, 82, 1.1, 7);
     showToast(cashPenalty ? `${message} · -£${cashPenalty} TAKINGS` : message, "bad");
     playTone("bad");
     refreshHeader();
@@ -512,7 +559,13 @@
       game.served += 1;
       game.customers.splice(index, 1);
     }
-    game.particles.push({ x: 695 + index * 58, y: 225, life: 1, text: `+${points}`, color: patienceRatio > .6 ? "#ffd84d" : "#fffdf4" });
+    const effectX = 695 + index * 58;
+    game.particles.push({ x: effectX, y: 225, life: 1, maxLife: 1, text: `+${points}`, color: patienceRatio > .6 ? "#ffd84d" : "#fffdf4", rise: 24 });
+    if (product.group === "cans") pushEffect("fizz", effectX + 18, 260, 54, .8, 12);
+    else if (product.group === "slush") pushEffect("slushSplash", effectX + 18, 258, 62, .9, 10);
+    else if (product.group === "hot") pushEffect("steam", effectX + 18, 255, 50, .9, 18);
+    else pushEffect("coin", effectX + 18, 255, 34, .75, 22);
+    if (tip) pushEffect("tipJar", effectX + 42, 250, 48, 1.1, 12);
     const resultText = orderComplete
       ? `${customer.orders.length > 1 ? `GROUP ORDER +${groupBonus} · ` : ""}SERVED +${points}`
       : `${customer.completed.filter(Boolean).length} OF ${customer.orders.length} ITEMS READY`;
@@ -528,7 +581,8 @@
     game.lost += 1;
     game.score = Math.max(0, game.score - 85);
     game.shake = .2;
-    game.particles.push({ x: 760, y: 240, life: 1, text: "TOO SLOW!", color: "#ff8c8c" });
+    game.particles.push({ x: 760, y: 240, life: 1, maxLife: 1, text: "TOO SLOW!", color: "#ff8c8c", rise: 24 });
+    pushEffect("wrongOrder", 815, 245, 62, .9, 8);
     playTone("bad");
     updateQueueUI();
     refreshHeader();
@@ -591,7 +645,11 @@
       }
     }
 
-    game.particles.forEach(p => { p.life -= dt; p.y -= dt * 24; });
+    game.particles.forEach(p => {
+      p.life -= dt;
+      p.y -= dt * (p.rise ?? 24);
+      p.x += dt * (p.vx ?? 0);
+    });
     game.particles = game.particles.filter(p => p.life > 0);
     updateButtons();
     refreshHeader();
@@ -651,8 +709,8 @@
     return crop;
   }
 
-  function drawProductImage(c, type, maxSize = 38) {
-    const image = productImages[type];
+  function drawImageAsset(c, imageSet, type, maxSize = 38) {
+    const image = imageSet[type];
     if (!image?.complete || !image.naturalWidth) return false;
     const crop = imageCrop(image);
     const fit = Math.min(maxSize / crop.w, maxSize / crop.h);
@@ -660,6 +718,26 @@
     const height = crop.h * fit;
     c.drawImage(image, crop.x, crop.y, crop.w, crop.h, -width / 2, -height / 2, width, height);
     return true;
+  }
+
+  function drawProductImage(c, type, maxSize = 38) {
+    return drawImageAsset(c, productImages, type, maxSize);
+  }
+
+  function drawEffect(type, x, y, size, alpha = 1) {
+    ctx.save();
+    ctx.translate(Math.round(x), Math.round(y));
+    ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+    drawImageAsset(ctx, effectImages, type, size);
+    ctx.restore();
+  }
+
+  function drawEquipment(type, x, y, size, alpha = 1) {
+    ctx.save();
+    ctx.translate(Math.round(x), Math.round(y));
+    ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+    drawImageAsset(ctx, equipmentImages, type, size);
+    ctx.restore();
   }
 
   function drawTreat(c, type, x, y, s = 1) {
@@ -806,8 +884,15 @@
       rect(ctx, x + 4, 33, slotWidth - 8, 23, "#506276");
       if (item) {
         rect(ctx, x + 4, 33, (slotWidth - 8) * Math.min(1, item.elapsed / item.duration), 23, "#54d69b");
-        if (item.kind === "restock") pixelText(ctx, "+ CANS", x + slotWidth / 2, 45, 11, "#10243f", "center");
-        else drawTreat(ctx, prepArtwork(item), x + slotWidth / 2, 43, .55);
+        if (item.kind === "restock") {
+          drawEquipment("canCrate", x + slotWidth / 2, 44, 28);
+        } else {
+          drawTreat(ctx, prepArtwork(item), x + slotWidth / 2, 43, .55);
+          const product = PRODUCTS.find((candidate) => candidate.id === item.type);
+          if (product?.group === "hot" && item.elapsed / item.duration > .18) {
+            drawEffect("steam", x + slotWidth / 2 + 16, 35, 24, .72);
+          }
+        }
       } else {
         pixelText(ctx, "READY", x + slotWidth / 2, 45, 12, "#d8e7ee", "center");
       }
@@ -898,6 +983,12 @@
     ctx.save();
     if (game && game.shake > 0) ctx.translate((Math.random()-.5)*8,(Math.random()-.5)*5);
     drawLocationArt(loc);
+    if (loc.id === "christmas") {
+      drawEffect("festiveLights", 480, 70, 620, .9);
+      drawEffect("snow", 820, 165 + Math.sin((game?.elapsed || 0) * 1.8) * 8, 150, .56);
+    } else if (loc.id === "sydney") {
+      drawEffect("heatShimmer", 820, 170 + Math.sin((game?.elapsed || 0) * 2.2) * 6, 150, .42);
+    }
     drawVan();
     drawPrepStatus();
     if (game) game.customers.forEach((customer,i) => drawCustomer(customer,i,game.customers.length));
@@ -907,7 +998,15 @@
       pixelText(ctx,game.loc.name.toUpperCase(),24,510,19,"#fffdf4");
       pixelText(ctx,`${game.served} SERVED`,936,510,17,"#ffd84d","right");
       if (game.combo >= 4) pixelText(ctx,`COMBO x${game.combo}`,625,510,21,"#54d69b","center");
-      game.particles.forEach(p => { ctx.globalAlpha=Math.max(0,p.life);pixelText(ctx,p.text,p.x,p.y,18,p.color,"center");ctx.globalAlpha=1; });
+      game.particles.forEach((p) => {
+        const alpha = Math.max(0, p.life / (p.maxLife || 1));
+        if (p.effect) drawEffect(p.effect, p.x, p.y, p.size || 60, alpha);
+        if (p.text) {
+          ctx.globalAlpha = alpha;
+          pixelText(ctx, p.text, p.x, p.y, 18, p.color, "center");
+          ctx.globalAlpha = 1;
+        }
+      });
       if (game.loc.id === "football" && game.time < 42 && game.time > 25) {
         rect(ctx,710,16,225,35,"#e93448"); pixelText(ctx,"HALF-TIME RUSH!",822,34,20,"#fffdf4","center");
       }

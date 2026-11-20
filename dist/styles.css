@@ -126,7 +126,10 @@ h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
 
 .upgrade-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
 .upgrade-card { display: grid; grid-template-columns: 45px 1fr; gap: 10px; min-height: 145px; padding: 15px; border: 3px solid var(--ink); background: #edf8fc; box-shadow: 4px 4px 0 #a8c5d6; }
+.upgrade-card.has-art { grid-template-columns: 74px 1fr; }
 .upgrade-card .upgrade-icon { width: 43px; height: 43px; display: grid; place-items: center; color: var(--paper); background: var(--red); border: 3px solid var(--ink); font: 900 1.25rem/1 "DM Mono", monospace; }
+.upgrade-card .upgrade-icon.art { width: 72px; height: 72px; border: 0; background: transparent; }
+.upgrade-art { width: 72px; height: 72px; object-fit: contain; image-rendering: pixelated; }
 .upgrade-card h3 { margin: 0; font: 400 1.35rem/1 "Changa One", Impact, sans-serif; }
 .upgrade-card p { margin: 6px 0 10px; font-size: .76rem; line-height: 1.3; color: #526b80; }
 .level-pips { display: flex; gap: 3px; margin-bottom: 10px; }
@@ -182,6 +185,7 @@ h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
 .product-btn span strong { font: 400 1.05rem/1 "Changa One", Impact, sans-serif; }
 .product-btn span small { margin-top: 4px; font: 700 .58rem/1 "DM Mono", monospace; color: #6b7e8c; }
 .product-btn .key { position: absolute; right: 3px; top: 3px; width: 17px; height: 17px; text-align: center; background: var(--ink); color: var(--paper); font: 500 .6rem/17px "DM Mono", monospace; }
+.restock-art { width: 42px; height: 42px; object-fit: contain; image-rendering: pixelated; }
 .product-btn[disabled] { filter: grayscale(1); opacity: .45; cursor: not-allowed; }
 .product-btn.busy { background: var(--yellow); }
 .restock-btn { background: #dff5e8; }
