@@ -89,7 +89,7 @@ button:focus-visible { outline: 4px solid var(--yellow); outline-offset: 3px; }
 
 .screen { position: absolute; inset: 0; z-index: 10; display: none; }
 .screen.active { display: flex; }
-.title-screen { align-items: stretch; background: url('assets/location-seaside.jpg') center/cover no-repeat; }
+.title-screen { align-items: stretch; background: url('assets/title-seaside-van.jpg') center/cover no-repeat; }
 .title-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(7,22,40,.94) 0%, rgba(7,22,40,.82) 35%, rgba(7,22,40,.1) 65%, rgba(7,22,40,.02) 100%); }
 .title-copy { position: relative; z-index: 1; align-self: center; margin-left: clamp(28px, 7vw, 98px); max-width: 510px; padding-block: 25px; }
 .eyebrow { margin: 0 0 12px; font: 700 .75rem/1 "DM Mono", monospace; letter-spacing: .16em; color: var(--yellow); }

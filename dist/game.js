@@ -770,19 +770,6 @@
     rect(ctx,x+181,y+18,328,17,"#10243f");
     pixelText(ctx,"WHITBY WHIPPY",x+345,y+27,18,"#fffdf4","center");
     pixelText(ctx,"BRITISH COACHBUILT",x+345,y+183,11,"#fffdf4","center");
-
-    if (game) {
-      const slots = prepSlots();
-      game.prep.forEach((item,i) => {
-        const px=x+248+i*78, py=y-23;
-        rect(ctx,px,py,68,18,"#10243f");
-        rect(ctx,px+3,py+3,62*(item.elapsed/item.duration),12,"#54d69b");
-        drawTreat(ctx,item.type,px+34,py-16,.52);
-      });
-      for(let i=game.prep.length;i<slots;i++){
-        rect(ctx,x+248+i*78,y-23,68,18,"#10243f"); rect(ctx,x+251+i*78,y-20,62,12,"#506276");
-      }
-    }
   }
 
   function drawCustomer(customer, index, total) {
@@ -821,6 +808,7 @@
     ctx.save();
     if (game && game.shake > 0) ctx.translate((Math.random()-.5)*8,(Math.random()-.5)*5);
     drawLocationArt(loc);
+    drawVan();
     drawPrepStatus();
     if (game) game.customers.forEach((customer,i) => drawCustomer(customer,i,game.customers.length));
     rect(ctx,0,486,960,54,"#10243f");
