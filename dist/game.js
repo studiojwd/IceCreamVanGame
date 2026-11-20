@@ -78,6 +78,51 @@
   const equipmentImages = loadImageSet(EQUIPMENT_ASSETS);
   const effectImages = loadImageSet(EFFECT_ASSETS);
 
+  const CUSTOMER_ASSETS = {
+    summerWomanYoung: "assets/customers/customer-01-summer-woman-young.png",
+    summerManYoung: "assets/customers/customer-02-summer-man-young.png",
+    summerWomanMiddle: "assets/customers/customer-03-summer-woman-middle-aged.png",
+    winterManElderlyA: "assets/customers/customer-04-winter-man-elderly.png",
+    winterWomanAdult: "assets/customers/customer-05-winter-woman-adult.png",
+    winterBoyTeen: "assets/customers/customer-06-winter-boy-teen.png",
+    footballWomanYoung: "assets/customers/customer-07-football-woman-young.png",
+    footballManMiddle: "assets/customers/customer-08-football-man-middle-aged.png",
+    footballWomanElderly: "assets/customers/customer-09-football-woman-elderly.png",
+    touristManAdult: "assets/customers/customer-10-tourist-man-adult.png",
+    touristWomanElderly: "assets/customers/customer-11-tourist-woman-elderly.png",
+    touristManYoung: "assets/customers/customer-12-tourist-man-young.png",
+    summerWomanYoungB: "assets/customers/customer-13-summer-woman-young.png",
+    summerManElderly: "assets/customers/customer-14-summer-man-elderly.png",
+    summerManMiddle: "assets/customers/customer-15-summer-man-middle-aged.png",
+    winterManYoung: "assets/customers/customer-16-winter-man-young.png",
+    winterWomanMiddle: "assets/customers/customer-17-winter-woman-middle-aged.png",
+    winterManElderlyB: "assets/customers/customer-18-winter-man-elderly.png",
+    footballGirlTeen: "assets/customers/customer-19-football-girl-teen.png",
+    footballManAdult: "assets/customers/customer-20-football-man-adult.png",
+    footballWomanMiddle: "assets/customers/customer-21-football-woman-middle-aged.png",
+    touristWomanYoung: "assets/customers/customer-22-tourist-woman-young.png",
+    touristWomanMiddle: "assets/customers/customer-23-tourist-woman-middle-aged.png",
+    touristManElderly: "assets/customers/customer-24-tourist-man-elderly.png"
+  };
+
+  const customerImages = loadImageSet(CUSTOMER_ASSETS);
+  const customerCleanImages = new Map();
+  const customerFrameCrops = new Map();
+
+  const SUMMER_CUSTOMERS = ["summerWomanYoung", "summerManYoung", "summerWomanMiddle", "summerWomanYoungB", "summerManElderly", "summerManMiddle"];
+  const WINTER_CUSTOMERS = ["winterManElderlyA", "winterWomanAdult", "winterBoyTeen", "winterManYoung", "winterWomanMiddle", "winterManElderlyB"];
+  const FOOTBALL_CUSTOMERS = ["footballWomanYoung", "footballManMiddle", "footballWomanElderly", "footballGirlTeen", "footballManAdult", "footballWomanMiddle"];
+  const TOURIST_CUSTOMERS = ["touristManAdult", "touristWomanElderly", "touristManYoung", "touristWomanYoung", "touristWomanMiddle", "touristManElderly"];
+  const CUSTOMER_POOLS = {
+    seaside: SUMMER_CUSTOMERS,
+    village: [...SUMMER_CUSTOMERS, ...TOURIST_CUSTOMERS.slice(0, 3)],
+    football: FOOTBALL_CUSTOMERS,
+    london: TOURIST_CUSTOMERS,
+    christmas: WINTER_CUSTOMERS,
+    market: [...SUMMER_CUSTOMERS, ...WINTER_CUSTOMERS, ...FOOTBALL_CUSTOMERS, ...TOURIST_CUSTOMERS],
+    sydney: [...SUMMER_CUSTOMERS, ...TOURIST_CUSTOMERS]
+  };
+
   const PRODUCT_GROUPS = {
     ice: { label: "ICE CREAM", short: "ICE" },
     cans: { label: "COLD CANS", short: "CANS" },
@@ -419,6 +464,7 @@
     const patienceBoost = 1 + save.upgrades.hatch * .055 + save.upgrades.till * .04;
     const orderBoost = 1 + (itemCount - 1) * .22;
     const maxPatience = game.loc.patience * patienceBoost * orderBoost * (.88 + Math.random() * .28);
+    const characterPool = CUSTOMER_POOLS[game.loc.id] || SUMMER_CUSTOMERS;
     game.customers.push({
       id: `${Date.now()}-${Math.random()}`,
       orders,
@@ -426,8 +472,13 @@
       patience: maxPatience,
       maxPatience,
       look: customerLooks[Math.floor(Math.random() * customerLooks.length)],
+      character: characterPool[Math.floor(Math.random() * characterPool.length)],
       phase: Math.random() * Math.PI * 2,
-      entering: 1
+      entering: 1,
+      exiting: 0,
+      status: "waiting",
+      happyPulse: 0,
+      mistakePulse: 0
     });
     updateQueueUI();
     return true;
@@ -444,6 +495,7 @@
 
   function findPendingOrder(productId) {
     for (const customer of game.customers) {
+      if (customer.status !== "waiting") continue;
       for (let itemIndex = 0; itemIndex < customer.orders.length; itemIndex++) {
         const reserved = game.prep.some((item) => item.targetId === customer.id && item.itemIndex === itemIndex);
         if (!customer.completed[itemIndex] && customer.orders[itemIndex] === productId && !reserved) {
@@ -514,7 +566,11 @@
     game.score = Math.max(0, game.score - 60);
     game.cash = Math.max(0, game.cash - cashPenalty);
     game.shake = .25;
-    game.customers.forEach(c => { c.patience = Math.max(.4, c.patience - .45); });
+    game.customers.forEach(c => {
+      if (c.status !== "waiting") return;
+      c.patience = Math.max(.4, c.patience - .45);
+      c.mistakePulse = .45;
+    });
     pushEffect("wrongOrder", 760, 235, 82, 1.1, 7);
     showToast(cashPenalty ? `${message} · -£${cashPenalty} TAKINGS` : message, "bad");
     playTone("bad");
@@ -525,7 +581,7 @@
     let index = game.customers.findIndex((customer) => customer.id === targetId);
     let itemIndex = targetItemIndex;
     let customer = game.customers[index];
-    if (index < 0 || customer.completed[itemIndex] || customer.orders[itemIndex] !== productId) {
+    if (index < 0 || customer?.status !== "waiting" || customer.completed[itemIndex] || customer.orders[itemIndex] !== productId) {
       const fallback = findPendingOrder(productId);
       if (fallback) {
         index = game.customers.indexOf(fallback.customer);
@@ -551,13 +607,15 @@
     game.score += points;
     game.cash += product.price + tip;
     customer.patience = Math.min(customer.maxPatience, customer.patience + .8);
+    customer.happyPulse = .42;
     const orderComplete = customer.completed.every(Boolean);
     let groupBonus = 0;
     if (orderComplete) {
       groupBonus = Math.round((customer.orders.length - 1) * 130 * game.loc.mult);
       game.score += groupBonus;
       game.served += 1;
-      game.customers.splice(index, 1);
+      customer.status = "celebrating";
+      customer.reaction = .72;
     }
     const effectX = 695 + index * 58;
     game.particles.push({ x: effectX, y: 225, life: 1, maxLife: 1, text: `+${points}`, color: patienceRatio > .6 ? "#ffd84d" : "#fffdf4", rise: 24 });
@@ -576,7 +634,10 @@
   }
 
   function loseCustomer(index) {
-    game.customers.splice(index, 1);
+    const customer = game.customers[index];
+    if (!customer || customer.status !== "waiting") return;
+    customer.status = "leaving";
+    customer.exiting = 0;
     game.combo = 0;
     game.lost += 1;
     game.score = Math.max(0, game.score - 85);
@@ -630,9 +691,22 @@
     const patienceRate = 1 - save.upgrades.till * .025;
     for (let i = game.customers.length - 1; i >= 0; i--) {
       const customer = game.customers[i];
-      customer.patience -= dt * patienceRate;
       customer.entering = Math.max(0, customer.entering - dt * 2.6);
-      if (customer.patience <= 0) loseCustomer(i);
+      customer.happyPulse = Math.max(0, (customer.happyPulse || 0) - dt);
+      customer.mistakePulse = Math.max(0, (customer.mistakePulse || 0) - dt);
+      if (customer.status === "celebrating") {
+        customer.reaction -= dt;
+        if (customer.reaction <= 0) customer.status = "leaving";
+      } else if (customer.status === "leaving") {
+        customer.exiting += dt * 2.15;
+        if (customer.exiting >= 1) {
+          game.customers.splice(i, 1);
+          updateQueueUI();
+        }
+      } else {
+        customer.patience -= dt * patienceRate;
+        if (customer.patience <= 0) loseCustomer(i);
+      }
     }
 
     for (let i = game.prep.length - 1; i >= 0; i--) {
@@ -947,18 +1021,103 @@
     pixelText(ctx,"BRITISH COACHBUILT",x+345,y+183,11,"#fffdf4","center");
   }
 
+  function cleanCustomerSheet(character) {
+    if (customerCleanImages.has(character)) return customerCleanImages.get(character);
+    const image = customerImages[character];
+    if (!image?.complete || !image.naturalWidth) return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const cleanCtx = canvas.getContext("2d", { willReadFrequently: true });
+    cleanCtx.imageSmoothingEnabled = false;
+    cleanCtx.drawImage(image, 0, 0);
+    const imageData = cleanCtx.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+    for (let i = 0; i < pixels.length; i += 4) {
+      const red = pixels[i], green = pixels[i + 1], blue = pixels[i + 2];
+      if (pixels[i + 3] > 0 && red > 210 && green < 52 && blue < 52 && red - Math.max(green, blue) > 165) pixels[i + 3] = 0;
+    }
+    cleanCtx.putImageData(imageData, 0, 0);
+    const cleaned = { canvas, pixels, width: canvas.width, height: canvas.height };
+    customerCleanImages.set(character, cleaned);
+    return cleaned;
+  }
+
+  function customerFrameCrop(character, frame) {
+    const key = `${character}-${frame}`;
+    if (customerFrameCrops.has(key)) return customerFrameCrops.get(key);
+    const cleaned = cleanCustomerSheet(character);
+    if (!cleaned) return null;
+    const startX = Math.floor(frame * cleaned.width / 5);
+    const endX = Math.floor((frame + 1) * cleaned.width / 5);
+    let left = endX, top = cleaned.height, right = -1, bottom = -1;
+    for (let y = 0; y < cleaned.height; y++) {
+      for (let x = startX; x < endX; x++) {
+        if (cleaned.pixels[(y * cleaned.width + x) * 4 + 3] > 12) {
+          left = Math.min(left, x);
+          top = Math.min(top, y);
+          right = Math.max(right, x);
+          bottom = Math.max(bottom, y);
+        }
+      }
+    }
+    const margin = 2;
+    const crop = right < left ? null : {
+      source: cleaned.canvas,
+      x: Math.max(startX, left - margin),
+      y: Math.max(0, top - margin),
+      w: Math.min(endX, right + margin + 1) - Math.max(startX, left - margin),
+      h: Math.min(cleaned.height, bottom + margin + 1) - Math.max(0, top - margin)
+    };
+    customerFrameCrops.set(key, crop);
+    return crop;
+  }
+
+  function drawCustomerSprite(customer, x, y, frame, flip, moving) {
+    const crop = customerFrameCrop(customer.character, frame);
+    if (!crop) return false;
+    const height = 118;
+    const scale = height / crop.h;
+    const width = crop.w * scale;
+    const step = Math.sin((game.elapsed + customer.phase) * 15);
+    ctx.save();
+    ctx.globalAlpha = .22;
+    ctx.fillStyle = "#10243f";
+    ctx.beginPath();
+    ctx.ellipse(x, y + 48, Math.min(25, width * .33), 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
+    ctx.translate(Math.round(x), Math.round(y + 48 + (moving ? Math.abs(step) * -2 : 0)));
+    if (flip) ctx.scale(-1, 1);
+    if (moving) ctx.rotate(step * .018);
+    ctx.drawImage(crop.source, crop.x, crop.y, crop.w, crop.h, -width / 2, -height, width, height);
+    ctx.restore();
+    return true;
+  }
+
   function drawCustomer(customer, index, total) {
     const spacing = Math.min(76, 310 / Math.max(1, total));
-    const x = 650 + index * spacing + customer.entering * 130;
-    const bob = Math.round(Math.sin((game.elapsed + customer.phase) * 4) * 2);
+    const moving = customer.entering > 0 || customer.status === "leaving";
+    const x = 650 + index * spacing + customer.entering * 145 + (customer.exiting || 0) * 175;
+    const bob = Math.round(Math.sin((game.elapsed + customer.phase) * (moving ? 8 : 4)) * (moving ? 1 : 2));
     const y = 372 + bob;
-    const [skin,hair,shirt] = customer.look;
-    rect(ctx,x-15,y-63,30,25,skin);
-    rect(ctx,x-17,y-68,34,11,hair); rect(ctx,x-17,y-60,7,15,hair);
-    rect(ctx,x-18,y-38,36,43,shirt);
-    rect(ctx,x-21,y+5,15,38,"#263b5c"); rect(ctx,x+6,y+5,15,38,"#263b5c");
-    rect(ctx,x-22,y+41,19,7,"#10243f"); rect(ctx,x+4,y+41,19,7,"#10243f");
-    rect(ctx,x-4,y-53,4,4,"#10243f"); rect(ctx,x+7,y-53,4,4,"#10243f");
+    const ratio = Math.max(0, customer.patience / customer.maxPatience);
+    let frame = 0;
+    if (moving) frame = 4;
+    else if (customer.status === "celebrating" || customer.happyPulse > 0) frame = 3;
+    else if (customer.mistakePulse > 0 || ratio < .42) frame = 2;
+    else if (Math.floor((game.elapsed + customer.phase) * 1.35) % 6 === 0) frame = 1;
+    const rendered = drawCustomerSprite(customer, x, y, frame, customer.entering > 0, moving);
+    if (!rendered) {
+      const [skin,hair,shirt] = customer.look;
+      rect(ctx,x-15,y-63,30,25,skin);
+      rect(ctx,x-17,y-68,34,11,hair); rect(ctx,x-17,y-60,7,15,hair);
+      rect(ctx,x-18,y-38,36,43,shirt);
+      rect(ctx,x-21,y+5,15,38,"#263b5c"); rect(ctx,x+6,y+5,15,38,"#263b5c");
+      rect(ctx,x-22,y+41,19,7,"#10243f"); rect(ctx,x+4,y+41,19,7,"#10243f");
+    }
+    if (customer.status !== "waiting") return;
     const bubbleW=Math.max(56,customer.orders.length*34+14),bubbleX=x-bubbleW/2,bubbleY=y-126-(index%2)*58;
     rect(ctx,bubbleX-4,bubbleY-4,bubbleW+8,55,"#10243f"); rect(ctx,bubbleX,bubbleY,bubbleW,47,"#fffdf4");
     ctx.fillStyle="#10243f";ctx.beginPath();ctx.moveTo(x-5,bubbleY+51);ctx.lineTo(x+7,bubbleY+51);ctx.lineTo(x+1,bubbleY+61);ctx.fill();
@@ -973,7 +1132,6 @@
         pixelText(ctx,"OK",itemX,bubbleY+38,8,"#10243f","center");
       }
     });
-    const ratio=Math.max(0,customer.patience/customer.maxPatience);
     rect(ctx,x-23,y+55,47,8,"#10243f");
     rect(ctx,x-21,y+57,43*ratio,4,ratio>.55?"#54d69b":ratio>.25?"#ffd84d":"#e93448");
   }
