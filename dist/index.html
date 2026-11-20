@@ -86,6 +86,9 @@
           <div id="newBest" class="new-best hidden">★ NEW LOCATION RECORD ★</div>
           <div class="result-grid">
             <span><small>CUSTOMERS</small><b id="servedResult">0</b></span>
+            <span><small>MISSED</small><b id="lostResult">0</b></span>
+            <span><small>MISTAKES</small><b id="mistakesResult">0</b></span>
+            <span><small>ACCURACY</small><b id="accuracyResult">100%</b></span>
             <span><small>BEST COMBO</small><b id="comboResult">x1</b></span>
             <span><small>TAKINGS</small><b id="cashResult">£0</b></span>
           </div>
@@ -107,6 +110,8 @@
             <article><b>2</b><div><strong>SWITCH MENU STATIONS</strong><p>Use the tabs for ice cream, cans, slushes and hot drinks. Keys 1–4 select the visible items.</p></div></article>
             <article><b>3</b><div><strong>WATCH YOUR STOCK</strong><p>Cans are quick, but the fridge runs out. Restocking occupies a preparation slot.</p></div></article>
             <article><b>4</b><div><strong>UPGRADE &amp; TRAVEL</strong><p>Improve each machine, handle group orders and unlock the complete world-tour menu.</p></div></article>
+            <article><b>5</b><div><strong>WRONG ITEM? YOU PAY</strong><p>Selecting something nobody ordered deducts that item’s full price from today’s takings.</p></div></article>
+            <article><b>6</b><div><strong>QUICK-SERVE SHORTCUTS</strong><p>Press Space for the first waiting order. Use Q and E to move between menu stations.</p></div></article>
           </div>
           <button id="helpBackBtn" class="pixel-btn primary">GOT IT</button>
         </div>
@@ -122,6 +127,7 @@
       </section>
 
       <div id="toast" class="toast" aria-live="assertive"></div>
+      <div id="gameStatus" class="sr-only" aria-live="polite"></div>
     </section>
 
     <section id="serviceDeck" class="service-deck" aria-label="Ice cream service controls">

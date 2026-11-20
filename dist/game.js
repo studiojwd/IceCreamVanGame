@@ -119,7 +119,7 @@
     football: FOOTBALL_CUSTOMERS,
     london: TOURIST_CUSTOMERS,
     christmas: WINTER_CUSTOMERS,
-    market: [...SUMMER_CUSTOMERS, ...WINTER_CUSTOMERS, ...FOOTBALL_CUSTOMERS, ...TOURIST_CUSTOMERS],
+    market: [...SUMMER_CUSTOMERS, ...TOURIST_CUSTOMERS],
     sydney: [...SUMMER_CUSTOMERS, ...TOURIST_CUSTOMERS]
   };
 
@@ -131,13 +131,13 @@
   };
 
   const LOCATIONS = [
-    { id: "seaside", name: "Seaside", detail: "SEA BREEZE · STEADY QUEUE", unlock: 0, duration: 75, spawn: 3.5, patience: 18, mult: 1, groups: ["ice"], maxItems: 1, groupChance: 0, scene: "#38aee8", asset: "assets/location-seaside.jpg" },
-    { id: "village", name: "Village Fête", detail: "CANS · FAMILY RUSH", unlock: 2400, duration: 75, spawn: 3, patience: 17, mult: 1.15, groups: ["ice", "cans"], maxItems: 1, groupChance: 0, scene: "#54be75", asset: "assets/location-village.jpg" },
-    { id: "football", name: "Football Match", detail: "GROUP ORDERS · HALF-TIME", unlock: 6500, duration: 80, spawn: 2.45, patience: 16, mult: 1.35, groups: ["ice", "cans"], maxItems: 2, groupChance: .42, scene: "#e9ad37", asset: "assets/location-football.jpg" },
-    { id: "london", name: "London", detail: "SLUSHES · TOURIST GROUPS", unlock: 11500, duration: 82, spawn: 2.2, patience: 15.5, mult: 1.55, groups: ["ice", "cans", "slush"], maxItems: 2, groupChance: .5, scene: "#e36d55", asset: "assets/location-london.jpg" },
-    { id: "christmas", name: "Christmas", detail: "HOT CHOCOLATE · FESTIVE RUSH", unlock: 17500, duration: 85, spawn: 2.05, patience: 15, mult: 1.75, groups: ["ice", "hot"], maxItems: 2, groupChance: .55, scene: "#5267b7", asset: "assets/location-christmas.jpg" },
-    { id: "market", name: "Evening Market", detail: "FULL MENU · TRIPLE ORDERS", unlock: 25000, duration: 85, spawn: 1.85, patience: 14.5, mult: 1.95, groups: ["ice", "cans", "slush", "hot"], maxItems: 3, groupChance: .62, scene: "#674f9c", asset: "assets/location-evening-market.jpg" },
-    { id: "sydney", name: "Sydney Opera House", detail: "HEATWAVE · WORLD TOUR", unlock: 36000, duration: 90, spawn: 1.7, patience: 13.5, mult: 2.2, groups: ["ice", "cans", "slush", "hot"], maxItems: 3, groupChance: .7, scene: "#20a4de", asset: "assets/location-sydney.jpg" }
+    { id: "seaside", name: "Seaside", detail: "SEA BREEZE · STEADY QUEUE", difficulty: 1, unlock: 0, duration: 75, spawn: 3.5, patience: 18, mult: 1, groups: ["ice"], maxItems: 1, groupChance: 0, scene: "#38aee8", asset: "assets/location-seaside.jpg" },
+    { id: "village", name: "Village Fête", detail: "CANS · FAMILY RUSH", difficulty: 2, unlock: 2400, duration: 75, spawn: 3, patience: 17, mult: 1.15, groups: ["ice", "cans"], maxItems: 1, groupChance: 0, scene: "#54be75", asset: "assets/location-village.jpg" },
+    { id: "football", name: "Football Match", detail: "GROUP ORDERS · HALF-TIME", difficulty: 3, unlock: 6500, duration: 80, spawn: 2.45, patience: 16, mult: 1.35, groups: ["ice", "cans"], maxItems: 2, groupChance: .42, scene: "#e9ad37", asset: "assets/location-football.jpg" },
+    { id: "london", name: "London", detail: "SLUSHES · TOURIST GROUPS", difficulty: 3, unlock: 11500, duration: 82, spawn: 2.2, patience: 15.5, mult: 1.55, groups: ["ice", "cans", "slush"], maxItems: 2, groupChance: .5, scene: "#e36d55", asset: "assets/location-london.jpg" },
+    { id: "christmas", name: "Christmas", detail: "HOT CHOCOLATE · FESTIVE RUSH", difficulty: 4, unlock: 17500, duration: 85, spawn: 2.05, patience: 15, mult: 1.75, groups: ["ice", "hot"], maxItems: 2, groupChance: .55, scene: "#5267b7", asset: "assets/location-christmas.jpg" },
+    { id: "market", name: "Evening Market", detail: "FULL MENU · TRIPLE ORDERS", difficulty: 5, unlock: 25000, duration: 85, spawn: 1.85, patience: 14.5, mult: 1.95, groups: ["ice", "cans", "slush", "hot"], maxItems: 3, groupChance: .62, scene: "#674f9c", asset: "assets/location-evening-market.jpg" },
+    { id: "sydney", name: "Sydney Opera House", detail: "HEATWAVE · WORLD TOUR", difficulty: 5, unlock: 36000, duration: 90, spawn: 1.7, patience: 13.5, mult: 2.2, groups: ["ice", "cans", "slush"], maxItems: 3, groupChance: .7, scene: "#20a4de", asset: "assets/location-sydney.jpg" }
   ];
 
   const locationImages = Object.fromEntries(LOCATIONS.map((location) => {
@@ -220,6 +220,10 @@
   }
 
   function formatScore(value) { return Math.max(0, Math.round(value)).toString().padStart(6, "0"); }
+  function formatMoney(value) {
+    const amount = Math.round(value);
+    return amount < 0 ? `-£${Math.abs(amount)}` : `£${amount}`;
+  }
   function formatTime(value) {
     const v = Math.max(0, Math.ceil(value));
     return `${String(Math.floor(v / 60)).padStart(2, "0")}:${String(v % 60).padStart(2, "0")}`;
@@ -311,7 +315,7 @@
   function refreshHeader() {
     const active = game && (mode === "playing" || mode === "paused");
     $("scoreValue").textContent = formatScore(active ? game.score : 0);
-    $("cashValue").textContent = `£${active ? game.cash : save.bank}`;
+    $("cashValue").textContent = formatMoney(active ? game.cash : save.bank);
     $("timeValue").textContent = formatTime(active ? game.time : LOCATIONS[selectedLocation].duration);
     $("comboValue").textContent = `x${active ? Math.max(1, game.combo) : 1}`;
     $("careerBest").textContent = formatScore(careerBest());
@@ -321,6 +325,7 @@
 
   function renderLocations() {
     $("bankValue").textContent = `£${save.bank}`;
+    const best = careerBest();
     const grid = $("locationGrid");
     grid.innerHTML = "";
     LOCATIONS.forEach((loc, index) => {
@@ -330,7 +335,9 @@
       button.style.setProperty("--scene", loc.scene);
       button.style.backgroundImage = `url("${loc.asset}")`;
       button.disabled = !isOpen;
-      button.innerHTML = `${isOpen ? "" : `<span class="lock">SCORE ${formatScore(loc.unlock)} TO UNLOCK</span>`}<strong>${loc.name}</strong><small>${loc.detail}</small><small class="record">BEST ${formatScore(save.highs[loc.id])}</small>`;
+      const unlockProgress = loc.unlock ? Math.min(1, best / loc.unlock) : 1;
+      const unlockLabel = isOpen ? "PITCH OPEN" : `${formatScore(Math.max(0, loc.unlock - best))} TO GO`;
+      button.innerHTML = `${isOpen ? "" : `<span class="lock">SCORE ${formatScore(loc.unlock)} TO UNLOCK</span>`}<strong>${loc.name}</strong><small>${loc.detail}</small><span class="pitch-meta"><em>${unlockLabel}</em><em>DIFFICULTY ${"◆".repeat(loc.difficulty)}</em></span>${isOpen ? "" : `<span class="unlock-progress" aria-hidden="true"><i style="width:${Math.round(unlockProgress * 100)}%"></i></span>`}<small class="record">BEST ${formatScore(save.highs[loc.id])}</small>`;
       button.addEventListener("click", () => {
         selectedLocation = index;
         renderLocations();
@@ -403,6 +410,9 @@
       bestCombo: 0,
       served: 0,
       lost: 0,
+      mistakes: 0,
+      attempts: 0,
+      correctItems: 0,
       spawnTimer: .7,
       customers: [],
       prep: [],
@@ -430,18 +440,22 @@
     const beforeCareer = careerBest();
     const previousHigh = save.highs[loc.id] || 0;
     if (!quit) {
-      save.bank += game.cash;
+      save.bank = Math.max(0, save.bank + game.cash);
       save.highs[loc.id] = Math.max(previousHigh, Math.round(game.score));
       save.career = Math.max(save.career, Math.round(game.score));
     }
     persist();
     mode = "results";
     $("resultEyebrow").textContent = quit ? "HATCH CLOSED EARLY" : "SHIFT COMPLETE";
-    $("resultsHeading").textContent = quit ? "PACKING UP?" : game.score >= loc.unlock + 3500 ? "WHAT A ROUND!" : "NICE WORK!";
+    const perfectShift = !quit && game.served >= 5 && game.lost === 0 && game.mistakes === 0;
+    $("resultsHeading").textContent = quit ? "PACKING UP?" : perfectShift ? "PERFECT SHIFT!" : game.score >= loc.unlock + 3500 ? "WHAT A ROUND!" : "NICE WORK!";
     $("finalScore").textContent = formatScore(game.score);
     $("servedResult").textContent = game.served;
+    $("lostResult").textContent = game.lost;
+    $("mistakesResult").textContent = game.mistakes;
+    $("accuracyResult").textContent = `${game.attempts ? Math.round(game.correctItems / game.attempts * 100) : 100}%`;
     $("comboResult").textContent = `x${Math.max(1, game.bestCombo)}`;
-    $("cashResult").textContent = `£${quit ? 0 : game.cash}`;
+    $("cashResult").textContent = formatMoney(quit ? 0 : game.cash);
     $("newBest").classList.toggle("hidden", quit || game.score <= previousHigh);
     const afterCareer = careerBest();
     const newlyUnlocked = LOCATIONS.find((place) => place.unlock > beforeCareer && place.unlock <= afterCareer);
@@ -449,6 +463,7 @@
     unlock.classList.toggle("hidden", !newlyUnlocked);
     unlock.textContent = newlyUnlocked ? `NEW PITCH UNLOCKED · ${newlyUnlocked.name.toUpperCase()}` : "";
     showScreen("resultsScreen");
+    $("gameStatus").textContent = `Shift ended. ${game.served} customers served, ${game.lost} missed, ${game.mistakes} mistakes, ${formatMoney(quit ? 0 : game.cash)} takings.`;
     refreshHeader();
   }
 
@@ -525,6 +540,7 @@
       playTone("bad");
       return;
     }
+    game.attempts += 1;
     if (product.group === "cans") game.canStock[productId] -= 1;
     game.prep.push({ kind: "order", type: productId, targetId: waiting.customer.id, itemIndex: waiting.itemIndex, elapsed: 0, duration: prepDuration(product) });
     playTone("tap");
@@ -560,18 +576,21 @@
     game.particles.push({ effect, x, y, size, life, maxLife: life, rise, vx });
   }
 
-  function mistake(message, cashPenalty = 0) {
+  function mistake(message, cashPenalty = 0, countAttempt = true) {
     if (!game) return;
+    game.mistakes += 1;
+    if (countAttempt) game.attempts += 1;
     game.combo = 0;
     game.score = Math.max(0, game.score - 60);
-    game.cash = Math.max(0, game.cash - cashPenalty);
+    game.cash -= cashPenalty;
     game.shake = .25;
     game.customers.forEach(c => {
       if (c.status !== "waiting") return;
       c.patience = Math.max(.4, c.patience - .45);
-      c.mistakePulse = .45;
+      c.mistakePulse = .85;
     });
     pushEffect("wrongOrder", 760, 235, 82, 1.1, 7);
+    if (cashPenalty) game.particles.push({ x: 760, y: 205, life: 1.15, maxLife: 1.15, text: `-£${cashPenalty}`, color: "#ff8c8c", rise: 28 });
     showToast(cashPenalty ? `${message} · -£${cashPenalty} TAKINGS` : message, "bad");
     playTone("bad");
     refreshHeader();
@@ -590,10 +609,11 @@
       }
     }
     if (!customer || itemIndex < 0) {
-      mistake("ORDER LEFT THE QUEUE");
+      mistake("ORDER LEFT THE QUEUE", 0, false);
       return;
     }
     customer.completed[itemIndex] = true;
+    game.correctItems += 1;
     const product = PRODUCTS.find(p => p.id === productId);
     const patienceRatio = customer.patience / customer.maxPatience;
     game.combo += 1;
@@ -607,7 +627,7 @@
     game.score += points;
     game.cash += product.price + tip;
     customer.patience = Math.min(customer.maxPatience, customer.patience + .8);
-    customer.happyPulse = .42;
+    customer.happyPulse = .9;
     const orderComplete = customer.completed.every(Boolean);
     let groupBonus = 0;
     if (orderComplete) {
@@ -615,7 +635,7 @@
       game.score += groupBonus;
       game.served += 1;
       customer.status = "celebrating";
-      customer.reaction = .72;
+      customer.reaction = 1.05;
     }
     const effectX = 695 + index * 58;
     game.particles.push({ x: effectX, y: 225, life: 1, maxLife: 1, text: `+${points}`, color: patienceRatio > .6 ? "#ffd84d" : "#fffdf4", rise: 24 });
@@ -650,7 +670,9 @@
   }
 
   function updateButtons() {
-    const canUse = mode === "playing" && game && game.prep.length < prepSlots();
+    const hasWaitingCustomer = !!game?.customers.some((customer) => customer.status === "waiting");
+    const canPrep = mode === "playing" && game && game.prep.length < prepSlots();
+    const canUse = canPrep && hasWaitingCustomer;
     document.querySelectorAll(".product-btn[data-product]").forEach((button) => {
       const type = button.dataset.product;
       const busy = game && game.prep.some(item => item.type === type);
@@ -662,7 +684,7 @@
     const restock = $("restockBtn");
     if (restock) {
       const full = !game || Object.values(game.canStock).every((amount) => amount >= canCapacity());
-      restock.disabled = mode !== "playing" || !canUse || full || game.prep.some((item) => item.kind === "restock");
+      restock.disabled = !canPrep || full || game.prep.some((item) => item.kind === "restock");
       restock.classList.toggle("busy", !!game?.prep.some((item) => item.kind === "restock"));
     }
   }
@@ -673,6 +695,9 @@
     $("queueCount").textContent = `${count} / ${max}`;
     const pips = $("queuePips");
     pips.innerHTML = Array.from({ length: max }, (_, i) => `<i class="${i < count ? "on" : ""}"></i>`).join("");
+    const first = game?.customers.find((customer) => customer.status === "waiting");
+    const pending = first?.orders.filter((_, index) => !first.completed[index]).map((id) => PRODUCTS.find((product) => product.id === id)?.name).filter(Boolean) || [];
+    $("gameStatus").textContent = first ? `${count} customers in the queue. First order: ${pending.join(", ")}.` : "No customers are waiting.";
   }
 
   function updateGame(dt) {
@@ -885,7 +910,7 @@
 
   function drawBackground(loc) {
     rect(ctx, 0, 0, 960, 540, loc.scene);
-    if (loc.id === "city") {
+    if (loc.id === "london") {
       rect(ctx, 0, 0, 960, 270, "#372c63");
       rect(ctx, 0, 225, 960, 315, "#203d4e");
       for (let i=0;i<13;i++) {
@@ -899,7 +924,7 @@
       rect(ctx, 30, 42, 5, 5, "#fff4a5"); rect(ctx, 188, 72, 4, 4, "#fff4a5"); rect(ctx, 774, 48, 5, 5, "#fff4a5");
     } else {
       drawCloud(90, 65, 1); drawCloud(610, 45, .8);
-      if (loc.id === "whitby") {
+      if (loc.id === "seaside") {
         rect(ctx, 0, 255, 960, 120, "#177fb6");
         for (let i=0;i<12;i++) rect(ctx, i*96 + (i%2)*20, 280+(i%3)*16, 52, 4, "#8ed9ef");
         rect(ctx, 0, 366, 960, 174, "#c7a77c");
@@ -916,12 +941,15 @@
         for(let i=0;i<18;i++){ctx.fillStyle=flags[i%4];ctx.beginPath();ctx.moveTo(i*58+5,114+i*4);ctx.lineTo(i*58+24,116+i*4);ctx.lineTo(i*58+15,134+i*4);ctx.fill();}
         rect(ctx, 755, 177, 120, 75, "#fffdf4");
         ctx.fillStyle="#e93448";ctx.beginPath();ctx.moveTo(735,178);ctx.lineTo(895,178);ctx.lineTo(815,123);ctx.fill();
-      } else {
+      } else if (loc.id === "football") {
         rect(ctx, 0, 218, 960, 322, "#75889b");
         rect(ctx, 0, 308, 960, 232, "#4b9a5e");
         for(let i=0;i<20;i++){rect(ctx,i*50,168+(i%2)*15,45,105,"#243c5b");rect(ctx,i*50+7,184+(i%2)*15,7,7,"#ffd84d");rect(ctx,i*50+27,184+(i%2)*15,7,7,"#fffdf4");}
         rect(ctx,0,270,960,12,"#e9ad37");
         pixelText(ctx,"MATCH DAY",770,130,28,"#fffdf4","center");
+      } else {
+        rect(ctx, 0, 245, 960, 295, loc.scene);
+        rect(ctx, 0, 390, 960, 150, "rgba(16,36,63,.18)");
       }
     }
   }
@@ -1009,7 +1037,15 @@
     rect(ctx,x+260,y+72,59,68,"#b8c8d1"); rect(ctx,x+269,y+81,41,19,"#708596");
     rect(ctx,x+276,y+105,5,27,"#10243f"); rect(ctx,x+298,y+105,5,27,"#10243f");
     rect(ctx,x+339,y+83,83,57,"#fffdf4");
-    drawTreat(ctx,"whippy",x+357,y+111,.65); drawTreat(ctx,"flake",x+382,y+111,.65); drawTreat(ctx,"lolly",x+406,y+111,.65);
+    const stationEquipment = selectedCategory === "cans"
+      ? (save.upgrades.freezer >= 2 ? "fridgeUpgraded" : "fridge")
+      : selectedCategory === "slush"
+        ? (save.upgrades.slushMachine >= 2 ? "slushUpgraded" : "slush")
+        : selectedCategory === "hot"
+          ? (save.upgrades.boiler >= 2 ? "boilerUpgraded" : "boiler")
+          : null;
+    if (stationEquipment) drawEquipment(stationEquipment,x+382,y+109,72);
+    else { drawTreat(ctx,"whippy",x+357,y+111,.65); drawTreat(ctx,"flake",x+382,y+111,.65); drawTreat(ctx,"lolly",x+406,y+111,.65); }
     rect(ctx,x+486,y+44,41,105,"#dce9ee");
     rect(ctx,x+91,y+208,61,25,"#10243f"); rect(ctx,x+430,y+208,61,25,"#10243f");
     ctx.fillStyle="#10243f";ctx.beginPath();ctx.arc(x+121,y+220,38,0,Math.PI*2);ctx.arc(x+460,y+220,38,0,Math.PI*2);ctx.fill();
@@ -1018,7 +1054,7 @@
     rect(ctx,x+46,y+180,16,10,"#ffd84d");
     rect(ctx,x+181,y+18,328,17,"#10243f");
     pixelText(ctx,"WHITBY WHIPPY",x+345,y+27,18,"#fffdf4","center");
-    pixelText(ctx,"BRITISH COACHBUILT",x+345,y+183,11,"#fffdf4","center");
+    pixelText(ctx,"WHITBY MORRISON COACHBUILT",x+345,y+183,10,"#fffdf4","center");
   }
 
   function cleanCustomerSheet(character) {
@@ -1197,6 +1233,17 @@
     refreshHeader();
   }
 
+  function cycleCategory(direction) {
+    if (mode !== "playing" || !game) return;
+    const groups = game.loc.groups;
+    if (groups.length < 2) return;
+    const current = Math.max(0, groups.indexOf(selectedCategory));
+    selectedCategory = groups[(current + direction + groups.length) % groups.length];
+    buildProductButtons();
+    updateButtons();
+    showToast(`${PRODUCT_GROUPS[selectedCategory].label} STATION`);
+  }
+
   $("playBtn").addEventListener("click", () => {
     if (!save.helpSeen) {
       previousScreen = "locationScreen";
@@ -1227,7 +1274,7 @@
     if (keyIndex >= 0 && visibleProductIds[keyIndex]) { event.preventDefault(); startProduct(visibleProductIds[keyIndex]); }
     if (event.code === "Space" && mode === "playing") {
       event.preventDefault();
-      const first = game.customers[0];
+      const first = game.customers.find((customer) => customer.status === "waiting" && customer.completed.some((done) => !done));
       const itemIndex = first?.completed.findIndex((done) => !done);
       if (first && itemIndex >= 0) {
         const product = PRODUCTS.find((item) => item.id === first.orders[itemIndex]);
@@ -1235,6 +1282,8 @@
         startProduct(product.id);
       }
     }
+    if ((event.key.toLowerCase() === "q" || event.key === "ArrowLeft") && mode === "playing") { event.preventDefault(); cycleCategory(-1); }
+    if ((event.key.toLowerCase() === "e" || event.key === "ArrowRight") && mode === "playing") { event.preventDefault(); cycleCategory(1); }
     if (event.key === "Escape") { if (mode === "playing") pauseGame(); else if (mode === "paused") resumeGame(); }
   });
 
