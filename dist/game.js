@@ -9,20 +9,37 @@
   const screens = [...document.querySelectorAll(".screen")];
 
   const PRODUCTS = [
-    { id: "whippy", group: "ice", name: "Classic Whippy", short: "WHIPPY", price: 3, points: 120, prep: 1.35 },
-    { id: "flake", group: "ice", name: "Chocolate 99", short: "99 FLAKE", price: 4, points: 170, prep: 1.8 },
-    { id: "sundae", group: "ice", name: "Berry Sundae", short: "SUNDAE", price: 5, points: 220, prep: 2.15 },
-    { id: "lolly", group: "ice", name: "Rocket Lolly", short: "LOLLY", price: 2, points: 95, prep: .9 },
-    { id: "cola", group: "cans", name: "Cola Can", short: "COLA", price: 2, points: 85, prep: .42 },
-    { id: "lemonade", group: "cans", name: "Lemonade Can", short: "LEMONADE", price: 2, points: 85, prep: .42 },
-    { id: "water", group: "cans", name: "Water Can", short: "WATER", price: 2, points: 75, prep: .35 },
-    { id: "slushRed", group: "slush", name: "Cherry Slush", short: "RED SLUSH", price: 4, points: 190, prep: 2.1 },
-    { id: "slushBlue", group: "slush", name: "Blue Slush", short: "BLUE SLUSH", price: 4, points: 190, prep: 2.1 },
-    { id: "slushMix", group: "slush", name: "Mixed Slush", short: "MIXED SLUSH", price: 5, points: 250, prep: 2.8 },
-    { id: "hotChoc", group: "hot", name: "Hot Chocolate", short: "HOT CHOC", price: 4, points: 200, prep: 2.3 },
-    { id: "hotCream", group: "hot", name: "Cream Hot Chocolate", short: "+ CREAM", price: 5, points: 260, prep: 3 },
-    { id: "hotDeluxe", group: "hot", name: "Marshmallow Hot Chocolate", short: "+ MARSHMALLOWS", price: 6, points: 320, prep: 3.6 }
+    { id: "whippy", group: "ice", name: "Classic Whippy", short: "WHIPPY", price: 3, points: 120, prep: 1.35, asset: "classic-whippy.png" },
+    { id: "flake", group: "ice", name: "Chocolate 99", short: "99 FLAKE", price: 4, points: 170, prep: 1.8, asset: "99-flake.png" },
+    { id: "sundae", group: "ice", name: "Berry Sundae", short: "SUNDAE", price: 5, points: 220, prep: 2.15, asset: "sundae.png" },
+    { id: "lolly", group: "ice", name: "Rocket Lolly", short: "LOLLY", price: 2, points: 95, prep: .9, asset: "rocket-lolly.png" },
+    { id: "cola", group: "cans", name: "Cola Can", short: "COLA", price: 2, points: 85, prep: .42, asset: "can-cola.png" },
+    { id: "lemonade", group: "cans", name: "Lemonade Can", short: "LEMONADE", price: 2, points: 85, prep: .42, asset: "can-lemonade.png" },
+    { id: "orange", group: "cans", name: "Orange Can", short: "ORANGE", price: 2, points: 85, prep: .42, asset: "can-orange.png" },
+    { id: "water", group: "cans", name: "Water Can", short: "WATER", price: 2, points: 75, prep: .35, asset: "can-water.png" },
+    { id: "slushRed", group: "slush", name: "Cherry Slush", short: "RED SLUSH", price: 4, points: 190, prep: 2.1, asset: "slush-red.png" },
+    { id: "slushBlue", group: "slush", name: "Blue Slush", short: "BLUE SLUSH", price: 4, points: 190, prep: 2.1, asset: "slush-blue.png" },
+    { id: "slushMix", group: "slush", name: "Mixed Slush", short: "MIXED SLUSH", price: 5, points: 250, prep: 2.8, asset: "slush-mixed.png" },
+    { id: "hotChoc", group: "hot", name: "Hot Chocolate", short: "HOT CHOC", price: 4, points: 200, prep: 2.3, asset: "hot-chocolate-plain.png" },
+    { id: "hotCream", group: "hot", name: "Cream Hot Chocolate", short: "+ CREAM", price: 5, points: 260, prep: 3, asset: "hot-chocolate-cream.png" },
+    { id: "hotDeluxe", group: "hot", name: "Marshmallow Hot Chocolate", short: "MALLOW CHOC", price: 6, points: 320, prep: 3.6, asset: "hot-chocolate-marshmallows.png" }
   ];
+
+  const PRODUCT_ASSETS = {
+    ...Object.fromEntries(PRODUCTS.map((product) => [product.id, `assets/products/${product.asset}`])),
+    emptyCold: "assets/products/empty-cup-cold.png",
+    coldLid: "assets/products/lid-cold-dome.png",
+    straw: "assets/products/straw.png",
+    emptyHot: "assets/products/empty-cup-hot.png",
+    hotLid: "assets/products/lid-hot.png"
+  };
+
+  const productImages = Object.fromEntries(Object.entries(PRODUCT_ASSETS).map(([id, source]) => {
+    const image = new Image();
+    image.src = source;
+    return [id, image];
+  }));
+  const productImageCrops = new Map();
 
   const PRODUCT_GROUPS = {
     ice: { label: "ICE CREAM", short: "ICE" },
@@ -309,7 +326,7 @@
       shake: 0,
       ended: false,
       elapsed: 0,
-      canStock: { cola: stock, lemonade: stock, water: stock }
+      canStock: { cola: stock, lemonade: stock, orange: stock, water: stock }
     };
     selectedCategory = loc.groups[0];
     mode = "playing";
@@ -438,7 +455,7 @@
 
   function finishRestock() {
     const stock = canCapacity();
-    game.canStock = { cola: stock, lemonade: stock, water: stock };
+    game.canStock = { cola: stock, lemonade: stock, orange: stock, water: stock };
     buildProductButtons();
     updateButtons();
     showToast("DRINKS FRIDGE FULL", "good");
@@ -594,10 +611,65 @@
     c.restore();
   }
 
+  function imageCrop(image) {
+    if (productImageCrops.has(image)) return productImageCrops.get(image);
+    const maxSample = 256;
+    const ratio = Math.min(1, maxSample / Math.max(image.naturalWidth, image.naturalHeight));
+    const width = Math.max(1, Math.round(image.naturalWidth * ratio));
+    const height = Math.max(1, Math.round(image.naturalHeight * ratio));
+    const sample = document.createElement("canvas");
+    sample.width = width;
+    sample.height = height;
+    const sampleCtx = sample.getContext("2d", { willReadFrequently: true });
+    sampleCtx.drawImage(image, 0, 0, width, height);
+    const pixels = sampleCtx.getImageData(0, 0, width, height).data;
+    let left = width, top = height, right = -1, bottom = -1;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (pixels[(y * width + x) * 4 + 3] > 12) {
+          left = Math.min(left, x);
+          top = Math.min(top, y);
+          right = Math.max(right, x);
+          bottom = Math.max(bottom, y);
+        }
+      }
+    }
+    const scaleX = image.naturalWidth / width;
+    const scaleY = image.naturalHeight / height;
+    const margin = 3;
+    const cropLeft = Math.max(0, left - margin);
+    const cropTop = Math.max(0, top - margin);
+    const cropRight = Math.min(width, right + margin + 1);
+    const cropBottom = Math.min(height, bottom + margin + 1);
+    const crop = right < left ? { x: 0, y: 0, w: image.naturalWidth, h: image.naturalHeight } : {
+      x: cropLeft * scaleX,
+      y: cropTop * scaleY,
+      w: (cropRight - cropLeft) * scaleX,
+      h: (cropBottom - cropTop) * scaleY
+    };
+    productImageCrops.set(image, crop);
+    return crop;
+  }
+
+  function drawProductImage(c, type, maxSize = 38) {
+    const image = productImages[type];
+    if (!image?.complete || !image.naturalWidth) return false;
+    const crop = imageCrop(image);
+    const fit = Math.min(maxSize / crop.w, maxSize / crop.h);
+    const width = crop.w * fit;
+    const height = crop.h * fit;
+    c.drawImage(image, crop.x, crop.y, crop.w, crop.h, -width / 2, -height / 2, width, height);
+    return true;
+  }
+
   function drawTreat(c, type, x, y, s = 1) {
     c.save();
     c.translate(Math.round(x), Math.round(y));
     c.scale(s, s);
+    if (drawProductImage(c, type)) {
+      c.restore();
+      return;
+    }
     if (type === "lolly") {
       rect(c, -3, 9, 6, 13, "#b9813e");
       rect(c, -10, -17, 20, 9, "#e93448");
@@ -612,14 +684,14 @@
       rect(c, -4, -16, 8, 5, "#fffdf4");
       rect(c, 4, -9, 5, 6, "#e93471");
       rect(c, -9, -2, 5, 4, "#e93471");
-    } else if (["cola", "lemonade", "water"].includes(type)) {
-      const colors = { cola: "#e93448", lemonade: "#ffd84d", water: "#33a8e8" };
+    } else if (["cola", "lemonade", "orange", "water"].includes(type)) {
+      const colors = { cola: "#e93448", lemonade: "#ffd84d", orange: "#ff8b32", water: "#33a8e8" };
       rect(c, -10, -17, 20, 34, "#10243f");
       rect(c, -7, -14, 14, 28, colors[type]);
       rect(c, -7, -14, 14, 4, "#dbe7ed");
       rect(c, -7, 10, 14, 4, "#a7b9c5");
       rect(c, -3, -17, 7, 2, "#dbe7ed");
-      pixelText(c, type === "cola" ? "C" : type === "water" ? "W" : "L", 0, 1, 11, type === "lemonade" ? "#10243f" : "#fffdf4", "center");
+      pixelText(c, type === "cola" ? "C" : type === "water" ? "W" : type === "orange" ? "O" : "L", 0, 1, 11, type === "lemonade" ? "#10243f" : "#fffdf4", "center");
     } else if (["slushRed", "slushBlue", "slushMix"].includes(type)) {
       const primary = type === "slushBlue" ? "#29a9ee" : "#e93471";
       rect(c, -11, -11, 22, 25, "#10243f");
@@ -735,11 +807,29 @@
       if (item) {
         rect(ctx, x + 4, 33, (slotWidth - 8) * Math.min(1, item.elapsed / item.duration), 23, "#54d69b");
         if (item.kind === "restock") pixelText(ctx, "+ CANS", x + slotWidth / 2, 45, 11, "#10243f", "center");
-        else drawTreat(ctx, item.type, x + slotWidth / 2, 43, .55);
+        else drawTreat(ctx, prepArtwork(item), x + slotWidth / 2, 43, .55);
       } else {
         pixelText(ctx, "READY", x + slotWidth / 2, 45, 12, "#d8e7ee", "center");
       }
     }
+  }
+
+  function prepArtwork(item) {
+    const product = PRODUCTS.find((candidate) => candidate.id === item.type);
+    if (!product) return item.type;
+    const progress = Math.min(1, item.elapsed / item.duration);
+    if (product.group === "slush") {
+      if (progress < .2) return "emptyCold";
+      if (progress < .42) return item.type;
+      if (progress < .62) return "coldLid";
+      if (progress < .82) return "straw";
+    }
+    if (product.group === "hot") {
+      if (progress < .25) return "emptyHot";
+      if (progress < .7) return item.type;
+      if (progress < .86) return "hotLid";
+    }
+    return item.type;
   }
 
   function drawVan() {
