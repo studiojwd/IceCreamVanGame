@@ -42,17 +42,27 @@
   const productImageCrops = new Map();
 
   const EQUIPMENT_ASSETS = {
+    machine: "assets/equipment/soft-serve-machine-aria.png",
     slush: "assets/equipment/slush-machine-twin.png",
     slushUpgraded: "assets/equipment/slush-machine-twin-upgraded.png",
     cups: "assets/equipment/cup-lid-dispenser.png",
     cupsUpgraded: "assets/equipment/cup-lid-dispenser-upgraded.png",
     boiler: "assets/equipment/hot-chocolate-boiler.png",
     boilerUpgraded: "assets/equipment/hot-chocolate-boiler-upgraded.png",
+    till: "assets/equipment/contactless-till.png",
+    tillUpgraded: "assets/equipment/contactless-till-upgraded.png",
     fridge: "assets/equipment/drinks-fridge.png",
     fridgeUpgraded: "assets/equipment/drinks-fridge-upgraded.png",
     restockBox: "assets/equipment/restocking-box.png",
     canCrate: "assets/equipment/can-crate.png"
   };
+
+  const VAN_SKINS = [
+    { id: "cream", name: "Electric Cream", asset: "assets/vehicles/whitby-electric-ice-cream-van.png" },
+    { id: "blue", name: "Classic Blue", asset: "assets/vehicles/whitby-electric-blue.png" },
+    { id: "pink", name: "Strawberry Pink", asset: "assets/vehicles/whitby-electric-pink.png" },
+    { id: "lilac", name: "Twilight Lilac", asset: "assets/vehicles/whitby-electric-lilac.png" }
+  ];
 
   const EFFECT_ASSETS = {
     steam: "assets/effects/steam-puff.png",
@@ -77,6 +87,7 @@
 
   const equipmentImages = loadImageSet(EQUIPMENT_ASSETS);
   const effectImages = loadImageSet(EFFECT_ASSETS);
+  const vanImages = loadImageSet(Object.fromEntries(VAN_SKINS.map((skin) => [skin.id, skin.asset])));
 
   const CUSTOMER_ASSETS = {
     summerWomanYoung: "assets/customers/customer-01-summer-woman-young.png",
@@ -147,14 +158,14 @@
   }));
 
   const UPGRADES = [
-    { id: "machine", icon: "M", name: "Soft-Serve Machine", desc: "Whips cones and 99s 13% faster per level.", base: 120 },
+    { id: "machine", icon: "M", name: "ARIA Soft-Serve Machine", desc: "Whips cones and 99s 13% faster per level.", base: 120, equipment: ["machine", "machine"] },
     { id: "heads", icon: "2×", name: "Twin-Head Setup", desc: "Adds simultaneous prep slots at levels 1 and 3.", base: 180 },
     { id: "freezer", icon: "F", name: "Display Freezer", desc: "Adds can stock and serves cans, lollies and sundaes faster.", base: 135, equipment: ["fridge", "fridgeUpgraded"] },
     { id: "slushMachine", icon: "S", name: "Slush Machine", desc: "Cuts slush preparation time by 13% per level.", base: 190, equipment: ["slush", "slushUpgraded"] },
     { id: "boiler", icon: "H", name: "Chocolate Boiler", desc: "Pours hot chocolate 13% faster per level.", base: 190, equipment: ["boiler", "boilerUpgraded"] },
-    { id: "till", icon: "£", name: "Contactless Till", desc: "Faster payment keeps patience high and lifts every tip.", base: 150 },
+    { id: "till", icon: "£", name: "Contactless Till", desc: "Faster payment keeps patience high and lifts every tip.", base: 150, equipment: ["till", "tillUpgraded"] },
     { id: "hatch", icon: "H", name: "Serving Hatch", desc: "A wider hatch holds a larger, more patient queue.", base: 165, equipment: ["cups", "cupsUpgraded"] },
-    { id: "power", icon: "⚡", name: "Quiet Generator", desc: "More reliable power speeds up every order.", base: 210 }
+    { id: "power", icon: "⚡", name: "Battery & Inverter", desc: "Reliable electric power speeds up every order.", base: 210 }
   ];
 
   const DEFAULT_SAVE = {
@@ -162,6 +173,7 @@
     career: 0,
     highs: { seaside: 0, village: 0, football: 0, london: 0, christmas: 0, market: 0, sydney: 0 },
     upgrades: { machine: 0, heads: 0, freezer: 0, slushMachine: 0, boiler: 0, till: 0, hatch: 0, power: 0 },
+    vanSkin: "cream",
     sound: true,
     helpSeen: false
   };
@@ -174,12 +186,14 @@
       if (!migratedHighs.seaside && migratedHighs.whitby) migratedHighs.seaside = migratedHighs.whitby;
       if (!migratedHighs.football && migratedHighs.match) migratedHighs.football = migratedHighs.match;
       if (!migratedHighs.london && migratedHighs.city) migratedHighs.london = migratedHighs.city;
-      return {
+      const merged = {
         ...structuredClone(DEFAULT_SAVE),
         ...raw,
         highs: { ...DEFAULT_SAVE.highs, ...migratedHighs },
         upgrades: { ...DEFAULT_SAVE.upgrades, ...(raw.upgrades || {}) }
       };
+      if (!VAN_SKINS.some((skin) => skin.id === merged.vanSkin)) merged.vanSkin = DEFAULT_SAVE.vanSkin;
+      return merged;
     } catch (_) {
       return structuredClone(DEFAULT_SAVE);
     }
@@ -352,8 +366,32 @@
     return Math.round(upgrade.base * (1 + level * .76));
   }
 
+  function renderVanSkins() {
+    const grid = $("vanSkinGrid");
+    if (!grid) return;
+    grid.innerHTML = "";
+    VAN_SKINS.forEach((skin) => {
+      const selected = save.vanSkin === skin.id;
+      const button = document.createElement("button");
+      button.className = `van-skin-card${selected ? " selected" : ""}`;
+      button.setAttribute("aria-pressed", selected ? "true" : "false");
+      button.setAttribute("aria-label", `${skin.name} van livery${selected ? ", selected" : ""}`);
+      button.innerHTML = `<img src="${skin.asset}" alt=""><span>${skin.name}</span><small>${selected ? "SELECTED" : "CHOOSE LIVERY"}</small>`;
+      button.addEventListener("click", () => {
+        if (save.vanSkin === skin.id) return;
+        save.vanSkin = skin.id;
+        persist();
+        playTone("buy");
+        showToast(`${skin.name.toUpperCase()} SELECTED`, "good");
+        renderVanSkins();
+      });
+      grid.appendChild(button);
+    });
+  }
+
   function renderGarage() {
     $("garageBank").textContent = `£${save.bank}`;
+    renderVanSkins();
     const grid = $("upgradeGrid");
     grid.innerHTML = "";
     UPGRADES.forEach((upgrade) => {
@@ -1019,7 +1057,7 @@
     return item.type;
   }
 
-  function drawVan() {
+  function drawLegacyVan() {
     const x=34, y=225;
     rect(ctx,x+35,y+35,510,202,"#10243f");
     rect(ctx,x+42,y+27,494,194,"#fffdf4");
@@ -1055,6 +1093,50 @@
     rect(ctx,x+181,y+18,328,17,"#10243f");
     pixelText(ctx,"WHITBY WHIPPY",x+345,y+27,18,"#fffdf4","center");
     pixelText(ctx,"WHITBY MORRISON COACHBUILT",x+345,y+183,10,"#fffdf4","center");
+  }
+
+  function drawVan() {
+    const skin = VAN_SKINS.find((candidate) => candidate.id === save.vanSkin) || VAN_SKINS[0];
+    const image = vanImages[skin.id];
+    if (!image?.complete || !image.naturalWidth) {
+      drawLegacyVan();
+      return;
+    }
+
+    const crop = imageCrop(image);
+    const width = 620;
+    const height = width * crop.h / crop.w;
+    const x = 14;
+    const y = 463 - height;
+    ctx.drawImage(image, crop.x, crop.y, crop.w, crop.h, x, y, width, height);
+
+    const hatchX = x + 252;
+    const hatchY = y + 87;
+    const hatchW = 256;
+    const hatchH = 92;
+    rect(ctx, hatchX - 5, hatchY - 5, hatchW + 10, hatchH + 10, "#10243f");
+    rect(ctx, hatchX, hatchY, hatchW, hatchH, "#eaf6fa");
+    rect(ctx, hatchX, hatchY, hatchW, 14, "#fffdf4");
+    for (let stripe = 0; stripe < 12; stripe++) {
+      rect(ctx, hatchX + stripe * 22, hatchY, 11, 14, stripe % 3 === 1 ? "#54d69b" : "#e93448");
+    }
+    rect(ctx, hatchX + 8, hatchY + 65, hatchW - 16, 18, "#10243f");
+    pixelText(ctx, PRODUCT_GROUPS[selectedCategory].short, hatchX + 17, hatchY + 74, 10, "#ffd84d");
+
+    const stationEquipment = selectedCategory === "cans"
+      ? (save.upgrades.freezer >= 2 ? "fridgeUpgraded" : "fridge")
+      : selectedCategory === "slush"
+        ? (save.upgrades.slushMachine >= 2 ? "slushUpgraded" : "slush")
+        : selectedCategory === "hot"
+          ? (save.upgrades.boiler >= 2 ? "boilerUpgraded" : "boiler")
+          : "machine";
+    drawEquipment(stationEquipment, hatchX + 157, hatchY + 48, 72);
+    drawEquipment(save.upgrades.till >= 2 ? "tillUpgraded" : "till", hatchX + 222, hatchY + 48, 52);
+
+    const showcase = selectedCategory === "ice"
+      ? ["whippy", "flake", "lolly"]
+      : locationProducts().filter((product) => product.group === selectedCategory).slice(0, 3).map((product) => product.id);
+    showcase.forEach((product, index) => drawTreat(ctx, product, hatchX + 41 + index * 34, hatchY + 46, .58));
   }
 
   function cleanCustomerSheet(character) {

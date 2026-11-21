@@ -141,6 +141,20 @@ h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
 .location-card[disabled] { cursor: not-allowed; filter: grayscale(.7) brightness(.64); }
 .location-card .lock { align-self: flex-start; margin-bottom: auto; padding: 5px 8px; background: var(--ink); color: var(--yellow); font: 700 .64rem/1.2 "DM Mono", monospace; }
 
+.livery-workshop { margin-bottom: 24px; padding: 16px; border: 3px solid var(--ink); background: #eaf6fa; box-shadow: 4px 4px 0 #a8c5d6; }
+.livery-workshop > div:first-child { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.livery-workshop .eyebrow { margin: 0; }
+.livery-workshop h3, .equipment-heading { margin: 0; color: var(--ink); font: 400 1.35rem/1 "Changa One", Impact, sans-serif; letter-spacing: .03em; }
+.equipment-heading { margin: 0 0 12px; }
+.van-skin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
+.van-skin-card { min-width: 0; padding: 8px; border: 3px solid var(--ink); background: var(--paper); color: var(--ink); box-shadow: 3px 3px 0 var(--ink); cursor: pointer; }
+.van-skin-card:hover { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+.van-skin-card.selected { outline: 4px solid var(--mint); outline-offset: -7px; background: #dff5e8; }
+.van-skin-card img { display: block; width: 100%; height: 64px; object-fit: contain; image-rendering: pixelated; }
+.van-skin-card span, .van-skin-card small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.van-skin-card span { margin-top: 5px; font: 400 1rem/1 "Changa One", Impact, sans-serif; }
+.van-skin-card small { margin-top: 3px; color: #61788c; font: 700 .52rem/1 "DM Mono", monospace; }
+
 .upgrade-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
 .upgrade-card { display: grid; grid-template-columns: 45px 1fr; gap: 10px; min-height: 145px; padding: 15px; border: 3px solid var(--ink); background: #edf8fc; box-shadow: 4px 4px 0 #a8c5d6; }
 .upgrade-card.has-art { grid-template-columns: 74px 1fr; }
@@ -234,6 +248,7 @@ h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
   #gameCanvas { max-height: none; }
   .location-grid { grid-template-columns: 1fr 1fr; }
   .upgrade-grid { grid-template-columns: 1fr 1fr; }
+  .van-skin-grid { grid-template-columns: 1fr 1fr; }
   .service-deck { grid-template-columns: 1fr; gap: 8px; padding: 9px 12px 12px; }
   .deck-label, .deck-meter { display: none; }
   .product-buttons { width: 100%; }
@@ -258,6 +273,8 @@ h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
   .title-copy .text-btn { margin: 9px auto 0; display: block; font-size: .62rem; }
   .title-record { display: none; }
   .location-grid, .upgrade-grid { grid-template-columns: 1fr; }
+  .livery-workshop > div:first-child { display: block; }
+  .livery-workshop h3 { margin-top: 6px; }
   .location-card { min-height: 145px; }
   .panel-heading { display: grid; }
   .bank-card { justify-self: start; }

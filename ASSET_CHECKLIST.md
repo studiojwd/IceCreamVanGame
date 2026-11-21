@@ -7,15 +7,17 @@
 - Fourteen sale products across ice cream, cans, slush and hot chocolate.
 - Cold and hot cups, lids and straws.
 - Slush, drinks-fridge, hot-chocolate and cup-dispenser equipment art.
+- Four selectable 100% electric van liveries: cream, blue, pink and lilac.
+- ARIA soft-serve machine artwork for gameplay and the garage.
+- Base and upgraded contactless-till artwork.
 - Ten gameplay effects including steam, fizz, coins, tips, mistakes, snow and heat shimmer.
 
 ## Still needed — highest priority
 
-1. **Whitby Morrison gameplay van** — a clean side-on British coachbuilt ice cream van with the serving hatch open. Transparent PNG, ideally 1536 × 768, facing left. Keep the van separate from any background. A second upgraded version would let the garage visibly change the vehicle.
-2. **Soft-serve machine** — base and upgraded transparent PNGs, 1024 × 1024 square canvas.
-3. **Contactless till** — base and upgraded transparent PNGs, 1024 × 1024 square canvas.
-4. **Quiet generator / power unit** — base and upgraded transparent PNGs, 1024 × 1024 square canvas.
-5. **Official game logo and app icon** — transparent horizontal logo plus a 512 × 512 square icon. Supply any Whitby Morrison brand marks only if their use is authorised.
+1. **Open-hatch van states** — the four liveries are now in-game, but dedicated open-hatch versions would replace the generated service-window overlay. An upgraded exterior state for each colour would add more visible garage progression.
+2. **Upgraded soft-serve machine** — the supplied ARIA unit is used at every level; a more advanced second state would make machine upgrades visible.
+3. **Battery and inverter** — base and upgraded transparent PNGs, 1024 × 1024 square canvas, matching the electric van.
+4. **Official game logo and app icon** — transparent horizontal logo plus a 512 × 512 square icon. Supply any Whitby Morrison brand marks only if their use is authorised.
 
 ## Still needed — audio
 
@@ -28,7 +30,7 @@
 
 - A sixth customer pose holding their completed order.
 - Location-specific foreground crowd and prop layers to add depth over the backgrounds.
-- Upgrade layers for the van exterior: roof sign, lighting, hatch, wheels and livery.
+- Upgrade layers for the van exterior: roof sign, lighting, open hatch and wheels.
 - Preparation effects for soft-serve spirals, sauce, sprinkles and marshmallows.
 - Medal, trophy and perfect-shift graphics for the results screen.
 - A vendor/driver character for the title, garage and tutorial screens.
