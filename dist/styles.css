@@ -255,28 +255,29 @@ h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
 .help-panel > .pixel-btn { display: block; margin: auto; }
 .pause-panel { text-align: center; display: grid; justify-items: center; gap: 16px; }
 
-.service-deck { display: grid; grid-template-columns: minmax(165px,.8fr) minmax(460px,2.4fr) minmax(150px,.8fr); align-items: center; gap: 18px; padding: 12px clamp(14px,3vw,42px) max(14px, env(safe-area-inset-bottom)); background: var(--paper); color: var(--ink); border-top: 6px solid var(--red); }
+.service-deck { display: grid; grid-template-columns: minmax(150px,.7fr) minmax(520px,3fr) minmax(140px,.7fr); align-items: center; gap: 14px; padding: 9px clamp(14px,2.2vw,32px) max(11px, env(safe-area-inset-bottom)); background: var(--paper); color: var(--ink); border-top: 6px solid var(--red); }
 .deck-label span, .deck-label small { display: block; }
 .deck-label span { font-family: "Changa One", Impact, sans-serif; font-size: 1.4rem; color: var(--red); }
 .deck-label small, .deck-meter small { font: 700 .62rem/1.3 "DM Mono", monospace; color: #61788c; }
 .menu-console { min-width: 0; }
-.menu-rail-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 4px 7px 2px; color: #61788c; }
+.menu-rail-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 4px 5px 2px; color: #61788c; }
 .menu-rail-head span { color: var(--red); font: 400 .78rem/1 "Changa One", Impact, sans-serif; letter-spacing: .04em; }
 .menu-rail-head small { font: 700 .55rem/1 "DM Mono", monospace; }
-.product-buttons { display: flex; gap: 10px; width: 100%; padding: 2px 8px 10px 2px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-inline: contain; scroll-snap-type: x proximity; scrollbar-color: var(--red) #dceaf0; scrollbar-width: thin; }
+.product-buttons { display: flex; gap: 7px; width: 100%; padding: 2px 7px 8px 2px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-inline: contain; scroll-snap-type: x proximity; scrollbar-color: var(--red) #dceaf0; scrollbar-width: thin; }
 .product-buttons:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
 .product-buttons::-webkit-scrollbar { height: 9px; }
 .product-buttons::-webkit-scrollbar-track { background: #dceaf0; border: 2px solid var(--ink); }
 .product-buttons::-webkit-scrollbar-thumb { background: var(--red); border: 2px solid var(--ink); }
-.product-btn { position: relative; flex: 0 0 clamp(160px,18vw,220px); min-height: 72px; display: grid; grid-template-columns: 50px 1fr; gap: 8px; align-items: center; padding: 7px 10px; border: 3px solid var(--ink); background: #edf8fc; color: var(--ink); box-shadow: 4px 4px 0 var(--ink); cursor: pointer; overflow: hidden; text-align: left; scroll-snap-align: start; }
+.product-btn { position: relative; flex: 0 0 clamp(138px,12vw,160px); min-height: 60px; display: grid; grid-template-columns: 38px minmax(0,1fr); gap: 6px; align-items: center; padding: 5px 7px; border: 3px solid var(--ink); background: #edf8fc; color: var(--ink); box-shadow: 3px 3px 0 var(--ink); cursor: pointer; overflow: hidden; text-align: left; scroll-snap-align: start; }
 .product-btn:hover:not([disabled]) { transform: translate(2px,2px); box-shadow: 2px 2px 0 var(--ink); }
-.product-btn canvas { width: 42px; height: 42px; image-rendering: pixelated; }
+.product-btn canvas { width: 36px; height: 36px; image-rendering: pixelated; }
 .product-btn span strong, .product-btn span small { display: block; }
-.product-btn span strong { font: 400 1.05rem/1 "Changa One", Impact, sans-serif; }
-.product-btn span small { margin-top: 4px; font: 700 .58rem/1 "DM Mono", monospace; color: #6b7e8c; }
-.product-btn span em { display: block; margin-top: 4px; color: var(--red); font: 700 .5rem/1 "DM Mono", monospace; font-style: normal; }
-.product-btn .key { position: absolute; right: 3px; top: 3px; width: 17px; height: 17px; text-align: center; background: var(--ink); color: var(--paper); font: 500 .6rem/17px "DM Mono", monospace; }
-.restock-art { width: 42px; height: 42px; object-fit: contain; image-rendering: pixelated; }
+.product-btn span { min-width: 0; }
+.product-btn span strong { overflow: hidden; font: 400 .9rem/1 "Changa One", Impact, sans-serif; text-overflow: ellipsis; white-space: nowrap; }
+.product-btn span small { margin-top: 3px; font: 700 .56rem/1 "DM Mono", monospace; color: #6b7e8c; }
+.product-btn span em { display: block; overflow: hidden; margin-top: 3px; color: var(--red); font: 700 .44rem/1 "DM Mono", monospace; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.product-btn .key { position: absolute; right: 3px; top: 3px; width: 15px; height: 15px; text-align: center; background: var(--ink); color: var(--paper); font: 500 .52rem/15px "DM Mono", monospace; }
+.restock-art { width: 36px; height: 36px; object-fit: contain; image-rendering: pixelated; }
 .product-btn[disabled] { filter: grayscale(1); opacity: .45; cursor: not-allowed; }
 .product-btn.busy { background: var(--yellow); }
 .restock-btn { background: #dff5e8; }
@@ -321,12 +322,12 @@ h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
   .queue-pips { gap: 2px; margin: 0 0 3px; }
   .queue-pips i { width: 9px; height: 7px; border-width: 1px; }
   .deck-meter > span { display: block; font-size: .53rem; text-align: center; }
-  .product-buttons { width: 100%; gap: 7px; padding: 2px 5px 5px 2px; touch-action: pan-x; scrollbar-width: none; }
+  .product-buttons { width: 100%; gap: 6px; padding: 2px 5px 5px 2px; touch-action: pan-x; scrollbar-width: none; }
   .product-buttons::-webkit-scrollbar { display: none; }
   .menu-rail-head { min-height: 12px; margin: 0 2px 3px; }
-  .product-btn { flex-basis: 132px; min-height: 56px; grid-template-columns: 36px 1fr; padding: 4px 6px; border-width: 2px; box-shadow: 2px 2px 0 var(--ink); }
-  .product-btn canvas { width: 36px; height: 36px; }
-  .product-btn span strong { font-size: .86rem; }
+  .product-btn { flex-basis: 118px; min-height: 50px; grid-template-columns: 32px minmax(0,1fr); padding: 3px 5px; border-width: 2px; box-shadow: 2px 2px 0 var(--ink); }
+  .product-btn canvas, .restock-art { width: 32px; height: 32px; }
+  .product-btn span strong { font-size: .8rem; }
   .product-btn span small { font-size: .48rem; }
   .product-btn span em, .product-btn .key { display: none; }
 }
@@ -341,7 +342,7 @@ h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
   .service-deck { position: fixed; left: 10vw; right: 10vw; bottom: max(6px, env(safe-area-inset-bottom)); z-index: 22; min-height: 62px; padding: 4px 7px; border: 3px solid var(--ink); border-radius: 12px; background: rgba(255,253,244,.96); box-shadow: 4px 4px 0 var(--ink); }
   .menu-rail-head { display: none; }
   .product-buttons { padding-bottom: 2px; }
-  .product-btn { flex-basis: 122px; min-height: 52px; }
+  .product-btn { flex-basis: 112px; min-height: 48px; }
   .deck-meter { top: -37px; }
   .game-frame:has(.screen.active) + .service-deck { display: none; }
 }
@@ -378,8 +379,8 @@ h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
   .help-steps { grid-template-columns: 1fr; }
   .menu-panel { padding: 19px; }
   .menu-rail-head small { font-size: .48rem; }
-  .product-buttons { gap: 6px; padding-bottom: 5px; }
-  .product-btn { flex-basis: 128px; min-height: 54px; }
+  .product-buttons { gap: 5px; padding-bottom: 5px; }
+  .product-btn { flex-basis: 114px; min-height: 49px; }
   .result-grid { gap: 0; }
   .score-entry-controls { grid-template-columns: 1fr; }
   .leaderboard-heading { display: grid; }
