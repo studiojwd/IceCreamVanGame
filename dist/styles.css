@@ -220,6 +220,31 @@ h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
 .result-grid b { font: 500 1.25rem/1.5 "DM Mono", monospace; }
 .unlock-notice { padding: 10px; background: var(--mint); border: 3px solid var(--ink); font: 700 .8rem/1.3 "DM Mono", monospace; }
 
+.score-entry { margin-top: 16px; padding: 13px; border: 3px solid var(--ink); background: #eaf6fa; text-align: left; }
+.score-entry label { display: block; color: var(--ink); font: 700 .68rem/1.2 "DM Mono", monospace; }
+.score-entry small { display: block; margin-top: 5px; color: #5b7183; font-size: .7rem; }
+.score-entry-controls { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 11px; }
+.score-entry input { min-width: 0; height: 48px; padding: 0 12px; border: 3px solid var(--ink); background: var(--paper); color: var(--ink); font: 700 .82rem/1 "DM Mono", monospace; text-transform: uppercase; }
+.score-entry .pixel-btn { min-height: 48px; padding-inline: 15px; }
+.score-entry p { min-height: 1.1em; margin: 8px 0 0; color: var(--red-dark); font: 700 .64rem/1.3 "DM Mono", monospace; }
+.score-entry.disabled { opacity: .7; }
+
+.leaderboard-panel { width: min(720px, 96%); }
+.leaderboard-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.local-badge { padding: 8px 10px; border: 3px solid var(--ink); background: var(--yellow); box-shadow: 3px 3px 0 var(--ink); font: 700 .58rem/1 "DM Mono", monospace; }
+.leaderboard-intro { margin: 10px 0 18px; color: #536a7d; font-size: .8rem; }
+.leaderboard-list { margin: 0 0 20px; padding: 0; list-style: none; counter-reset: none; }
+.leaderboard-list li { display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 12px; min-height: 57px; padding: 8px 12px; border: 3px solid var(--ink); border-bottom: 0; background: #eaf6fa; }
+.leaderboard-list li:last-child { border-bottom: 3px solid var(--ink); }
+.leaderboard-list li:first-child { background: var(--yellow); }
+.leaderboard-list li > b { width: 30px; height: 30px; display: grid; place-items: center; border: 2px solid var(--ink); background: var(--red); color: var(--paper); font: 500 .75rem/1 "DM Mono", monospace; }
+.leaderboard-list strong, .leaderboard-list small { display: block; }
+.leaderboard-list strong { font: 400 1.15rem/1 "Changa One", Impact, sans-serif; }
+.leaderboard-list small { margin-top: 4px; color: #536a7d; font: 700 .55rem/1 "DM Mono", monospace; }
+.leaderboard-list em { color: var(--red); font: 500 1rem/1 "DM Mono", monospace; font-style: normal; }
+.leaderboard-empty { margin: 22px 0; padding: 18px; border: 3px dashed #9ab0be; color: #536a7d; text-align: center; font: 700 .7rem/1.4 "DM Mono", monospace; }
+.leaderboard-panel > .pixel-btn { display: block; margin: 0 auto; }
+
 .help-panel { width: min(680px, 97%); }
 .help-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; margin: 22px 0; }
 .help-steps article { display: flex; gap: 12px; padding: 13px; background: #eaf6fa; border: 3px solid var(--ink); }
@@ -301,6 +326,7 @@ h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
   .header-link { width: 32px; min-height: 32px; padding: 0; font-size: 0; }
   #topHelpBtn::after { content: "?"; font: 900 .78rem/1 "DM Mono", monospace; }
   #topGarageBtn::after { content: "G"; font: 900 .72rem/1 "DM Mono", monospace; }
+  #topLeaderboardBtn::after { content: "★"; font: 900 .72rem/1 "DM Mono", monospace; }
   .icon-btn { width: 32px; height: 32px; border-width: 2px; box-shadow: 2px 2px 0 var(--ink); }
   .title-copy { margin: auto 22px; padding-block: 5px; }
   .title-shade { background: linear-gradient(90deg, rgba(7,22,40,.82), rgba(7,22,40,.46)); }
@@ -329,6 +355,11 @@ h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
   .product-btn span em { display: none; }
   .product-btn .key { display: none; }
   .result-grid { gap: 0; }
+  .score-entry-controls { grid-template-columns: 1fr; }
+  .leaderboard-heading { display: grid; }
+  .local-badge { justify-self: start; }
+  .leaderboard-list li { grid-template-columns: 32px 1fr; gap: 8px; padding-inline: 8px; }
+  .leaderboard-list em { grid-column: 2; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -178,6 +178,9 @@
   const DEFAULT_SAVE = {
     bank: 0,
     career: 0,
+    lastScore: 0,
+    playerName: "",
+    leaderboard: [],
     highs: { seaside: 0, village: 0, football: 0, london: 0, christmas: 0, market: 0, sydney: 0 },
     upgrades: { machine: 0, heads: 0, freezer: 0, slushMachine: 0, boiler: 0, till: 0, hatch: 0, power: 0 },
     vanSkin: "cream",
@@ -199,6 +202,7 @@
         highs: { ...DEFAULT_SAVE.highs, ...migratedHighs },
         upgrades: { ...DEFAULT_SAVE.upgrades, ...(raw.upgrades || {}) }
       };
+      merged.leaderboard = Array.isArray(raw.leaderboard) ? raw.leaderboard.slice(0, 10) : [];
       if (!VAN_SKINS.some((skin) => skin.id === merged.vanSkin)) merged.vanSkin = DEFAULT_SAVE.vanSkin;
       return merged;
     } catch (_) {
@@ -211,6 +215,7 @@
   let selectedLocation = 0;
   let previousScreen = "titleScreen";
   let garageReturn = "locationScreen";
+  let leaderboardReturn = "titleScreen";
   let game = null;
   let lastTime = performance.now();
   let toastTimer = 0;
@@ -348,9 +353,11 @@
     const active = game && !game.ended && (
       mode === "playing" || mode === "paused" ||
       (mode === "help" && ["game", "pauseScreen"].includes(previousScreen)) ||
-      (mode === "garage" && ["game", "pauseScreen"].includes(garageReturn))
+      (mode === "garage" && ["game", "pauseScreen"].includes(garageReturn)) ||
+      (mode === "leaderboard" && ["game", "pauseScreen"].includes(leaderboardReturn))
     );
-    $("scoreValue").textContent = formatScore(active ? game.score : 0);
+    const displayedScore = game ? game.score : save.lastScore;
+    $("scoreValue").textContent = formatScore(displayedScore);
     $("cashValue").textContent = formatMoney(active ? game.cash : save.bank);
     $("timeValue").textContent = formatTime(active ? game.time : LOCATIONS[selectedLocation].duration);
     $("comboValue").textContent = `x${active ? Math.max(1, game.combo) : 1}`;
@@ -460,6 +467,7 @@
   function currentContext() {
     const active = activeScreenId();
     if (active === "helpScreen") return previousScreen;
+    if (active === "leaderboardScreen") return leaderboardReturn;
     if (mode === "playing") return "game";
     return active || (game && !game.ended ? "game" : "titleScreen");
   }
@@ -489,6 +497,95 @@
       showScreen("titleScreen");
     }
     refreshHeader();
+  }
+
+  function cleanPlayerName(value) {
+    return value.trim().replace(/[^a-z0-9 '&-]/gi, "").replace(/\s+/g, " ").slice(0, 12).toUpperCase();
+  }
+
+  function leaderboardEntries() {
+    return [...save.leaderboard]
+      .filter((entry) => entry && Number.isFinite(Number(entry.score)))
+      .sort((a, b) => Number(b.score) - Number(a.score) || String(a.date).localeCompare(String(b.date)))
+      .slice(0, 10);
+  }
+
+  function renderLeaderboard() {
+    const entries = leaderboardEntries();
+    const list = $("leaderboardList");
+    list.innerHTML = "";
+    entries.forEach((entry, index) => {
+      const item = document.createElement("li");
+      const location = LOCATIONS.find((place) => place.id === entry.location)?.name || "Unknown Pitch";
+      const date = entry.date ? new Date(entry.date) : null;
+      const dateLabel = date && !Number.isNaN(date.getTime())
+        ? date.toLocaleDateString(undefined, { day: "2-digit", month: "short" }).toUpperCase()
+        : "--";
+      item.innerHTML = `<b>${index + 1}</b><div><strong>${cleanPlayerName(entry.name) || "DRIVER"}</strong><small>${location.toUpperCase()} · ${Number(entry.served) || 0} SERVED · ${dateLabel}</small></div><em>${formatScore(entry.score)}</em>`;
+      list.appendChild(item);
+    });
+    $("leaderboardEmpty").classList.toggle("hidden", entries.length > 0);
+  }
+
+  function openLeaderboard(returnTo = currentContext()) {
+    leaderboardReturn = returnTo;
+    mode = "leaderboard";
+    const labels = { game: "BACK TO THE HATCH", pauseScreen: "BACK TO PAUSE", resultsScreen: "BACK TO RESULTS", garageScreen: "BACK TO GARAGE", locationScreen: "BACK TO LOCATIONS" };
+    $("leaderboardBackBtn").textContent = labels[returnTo] || "BACK TO TITLE";
+    renderLeaderboard();
+    showScreen("leaderboardScreen");
+    refreshHeader();
+    playTone("ui");
+  }
+
+  function closeLeaderboard() {
+    restoreContext(leaderboardReturn);
+    playTone("ui");
+  }
+
+  function prepareScoreEntry(quit) {
+    const form = $("scoreEntryForm");
+    const button = $("saveScoreBtn");
+    const input = $("playerName");
+    const status = $("scoreEntryStatus");
+    input.value = save.playerName || "";
+    status.textContent = "";
+    game.leaderboardSaved = false;
+    const eligible = !quit && game.served > 0 && game.score > 0;
+    form.classList.toggle("disabled", !eligible);
+    input.disabled = !eligible;
+    button.disabled = !eligible;
+    if (!eligible) status.textContent = quit ? "Finish a full shift to record a leaderboard score." : "Serve at least one customer to record a score.";
+  }
+
+  function saveLeaderboardScore(event) {
+    event.preventDefault();
+    if (!game || !game.ended || game.leaderboardSaved) return;
+    const name = cleanPlayerName($("playerName").value);
+    if (!name) {
+      $("scoreEntryStatus").textContent = "Enter a driver name first.";
+      $("playerName").focus();
+      return;
+    }
+    save.playerName = name;
+    save.leaderboard.push({
+      id: game.runId,
+      name,
+      score: Math.round(game.score),
+      location: game.loc.id,
+      served: game.served,
+      date: new Date().toISOString()
+    });
+    save.leaderboard = leaderboardEntries();
+    game.leaderboardSaved = true;
+    persist();
+    $("playerName").value = name;
+    $("playerName").disabled = true;
+    $("saveScoreBtn").disabled = true;
+    $("saveScoreBtn").textContent = "SCORE SAVED";
+    $("scoreEntryStatus").textContent = `${name} is now on the Top Runs board.`;
+    showToast("LEADERBOARD UPDATED", "good");
+    playTone("buy");
   }
 
   function openHelp(returnTo = currentContext()) {
@@ -544,6 +641,8 @@
       shake: 0,
       ended: false,
       elapsed: 0,
+      runId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      leaderboardSaved: false,
       canStock: { cola: stock, lemonade: stock, orange: stock, water: stock }
     };
     selectedCategory = loc.groups[0];
@@ -568,6 +667,7 @@
       save.highs[loc.id] = Math.max(previousHigh, Math.round(game.score));
       save.career = Math.max(save.career, Math.round(game.score));
     }
+    save.lastScore = Math.round(game.score);
     persist();
     mode = "results";
     $("resultEyebrow").textContent = quit ? "HATCH CLOSED EARLY" : "SHIFT COMPLETE";
@@ -586,6 +686,8 @@
     const unlock = $("unlockNotice");
     unlock.classList.toggle("hidden", !newlyUnlocked);
     unlock.textContent = newlyUnlocked ? `NEW PITCH UNLOCKED · ${newlyUnlocked.name.toUpperCase()}` : "";
+    $("saveScoreBtn").textContent = "SAVE SCORE";
+    prepareScoreEntry(quit);
     showScreen("resultsScreen");
     $("gameStatus").textContent = `Shift ended. ${game.served} customers served, ${game.lost} missed, ${game.mistakes} mistakes, ${formatMoney(quit ? 0 : game.cash)} takings.`;
     refreshHeader();
@@ -1453,6 +1555,13 @@
     }
     openGarage(active === "helpScreen" ? previousScreen : currentContext());
   });
+  $("topLeaderboardBtn").addEventListener("click", () => {
+    const active = activeScreenId();
+    if (active === "leaderboardScreen") return;
+    openLeaderboard(active === "helpScreen" ? previousScreen : currentContext());
+  });
+  $("leaderboardBackBtn").addEventListener("click", closeLeaderboard);
+  $("scoreEntryForm").addEventListener("submit", saveLeaderboardScore);
   $("locationsBtn").addEventListener("click", openLocations);
   $("againBtn").addEventListener("click", () => startRound(selectedLocation));
   $("pauseBtn").addEventListener("click", pauseGame);
@@ -1480,6 +1589,7 @@
       else if (mode === "paused") resumeGame();
       else if (mode === "help") closeHelp();
       else if (mode === "garage") closeGarage();
+      else if (mode === "leaderboard") closeLeaderboard();
     }
   });
 

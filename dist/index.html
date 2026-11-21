@@ -33,6 +33,7 @@
       <div class="top-actions">
         <button id="topHelpBtn" class="header-link" aria-label="How to play">HOW TO PLAY</button>
         <button id="topGarageBtn" class="header-link" aria-label="Open the garage">GARAGE</button>
+        <button id="topLeaderboardBtn" class="header-link" aria-label="Open the local leaderboard">TOP RUNS</button>
         <button id="soundBtn" class="icon-btn" aria-label="Toggle sound" title="Toggle sound">♪</button>
         <button id="pauseBtn" class="icon-btn" aria-label="Pause game" title="Pause game">Ⅱ</button>
       </div>
@@ -114,11 +115,38 @@
             <span><small>TAKINGS</small><b id="cashResult">£0</b></span>
           </div>
           <div id="unlockNotice" class="unlock-notice hidden"></div>
+          <form id="scoreEntryForm" class="score-entry" autocomplete="off">
+            <div>
+              <label for="playerName">ADD THIS RUN TO THE LEADERBOARD</label>
+              <small id="scoreEntryHint">Top 10 runs are saved on this device.</small>
+            </div>
+            <div class="score-entry-controls">
+              <input id="playerName" name="playerName" type="text" maxlength="12" placeholder="DRIVER NAME" aria-describedby="scoreEntryHint" required>
+              <button id="saveScoreBtn" class="pixel-btn secondary" type="submit">SAVE SCORE</button>
+            </div>
+            <p id="scoreEntryStatus" role="status" aria-live="polite"></p>
+          </form>
           <div class="panel-actions stacked">
             <button id="againBtn" class="pixel-btn primary">SAME PITCH AGAIN</button>
             <button id="locationsBtn" class="pixel-btn secondary">CHOOSE ANOTHER PITCH</button>
             <button id="resultsGarageBtn" class="text-btn">SPEND YOUR TAKINGS</button>
           </div>
+        </div>
+      </section>
+
+      <section id="leaderboardScreen" class="screen menu-screen" aria-labelledby="leaderboardHeading">
+        <div class="menu-panel leaderboard-panel">
+          <div class="leaderboard-heading">
+            <div>
+              <p class="eyebrow">VAN HALL OF FAME</p>
+              <h2 id="leaderboardHeading">TOP RUNS</h2>
+            </div>
+            <span class="local-badge">THIS DEVICE</span>
+          </div>
+          <p class="leaderboard-intro">Your ten best completed shifts, ranked by score.</p>
+          <ol id="leaderboardList" class="leaderboard-list"></ol>
+          <p id="leaderboardEmpty" class="leaderboard-empty">Complete a shift to claim the first spot.</p>
+          <button id="leaderboardBackBtn" class="pixel-btn primary">BACK</button>
         </div>
       </section>
 
