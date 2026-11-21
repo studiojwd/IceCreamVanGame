@@ -1,4 +1,4 @@
-# Whitby Whippy Dash asset checklist
+# Ice Cream Van Dash asset checklist
 
 ## Already supplied and integrated
 
@@ -9,17 +9,20 @@
 - Slush, drinks-fridge, hot-chocolate and cup-dispenser equipment art.
 - Four selectable 100% electric van liveries: cream, blue, pink and lilac.
 - ARIA soft-serve machine artwork for gameplay and the garage.
+- Upgraded pink ARIA soft-serve machine artwork.
+- Base and upgraded battery and inverter artwork.
 - Base and upgraded contactless-till artwork.
 - Ten gameplay effects including steam, fizz, coins, tips, mistakes, snow and heat shimmer.
+- Official Ice Cream Van Dash logo, used for the site identity, title and loading screen.
+- Complete seaside serving scene, used as the new home-screen artwork.
+- Procedural sound cues for navigation, arrivals, serving, mistakes, restocking, upgrades, pauses and results.
 
 ## Still needed — highest priority
 
 1. **Open-hatch van states** — the four liveries are now in-game, but dedicated open-hatch versions would replace the generated service-window overlay. An upgraded exterior state for each colour would add more visible garage progression.
-2. **Upgraded soft-serve machine** — the supplied ARIA unit is used at every level; a more advanced second state would make machine upgrades visible.
-3. **Battery and inverter** — base and upgraded transparent PNGs, 1024 × 1024 square canvas, matching the electric van.
-4. **Official game logo and app icon** — transparent horizontal logo plus a 512 × 512 square icon. Supply any Whitby Morrison brand marks only if their use is authorised.
+2. **Official app icon** — a 512 × 512 square icon. Supply any Whitby Morrison brand marks only if their use is authorised.
 
-## Still needed — audio
+## Still needed — bespoke audio production
 
 - Original or licensed ice-cream chime.
 - Soft-serve pour, freezer open, can fizz, slush pour, hot-chocolate pour and till sounds.

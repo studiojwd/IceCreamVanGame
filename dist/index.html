@@ -4,16 +4,25 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#10243f">
-  <meta name="description" content="Whitby Whippy Dash — a pixel-art British ice cream van arcade game.">
-  <title>Whitby Whippy Dash</title>
+  <meta name="description" content="Ice Cream Van Dash — a pixel-art British Whitby Morrison ice cream van arcade game.">
+  <title>Ice Cream Van Dash</title>
+  <link rel="icon" type="image/png" href="assets/logos/ice-cream-van-dash-logo.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div id="loadingScreen" class="loading-screen" role="status" aria-live="polite">
+    <div class="loading-card">
+      <img src="assets/logos/ice-cream-van-dash-logo.png" alt="Ice Cream Van Dash">
+      <p>STARTING THE ELECTRIC VAN</p>
+      <div class="loading-track" aria-hidden="true"><i id="loadingBar"></i></div>
+      <small id="loadingPercent">LOADING 0%</small>
+    </div>
+  </div>
   <main id="app">
     <header class="topbar">
       <button id="brandBtn" class="brand" aria-label="Return to title screen">
-        <span class="brand-cone" aria-hidden="true"></span>
-        <span><strong>WHITBY</strong><em>WHIPPY DASH</em></span>
+        <img src="assets/logos/ice-cream-van-dash-logo.png" alt="" aria-hidden="true">
+        <span><strong>ICE CREAM VAN</strong><em>DASH</em></span>
       </button>
       <div class="top-stats" aria-live="polite">
         <span><small>SCORE</small><b id="scoreValue">000000</b></span>
@@ -22,22 +31,26 @@
         <span class="combo-stat"><small>COMBO</small><b id="comboValue">x1</b></span>
       </div>
       <div class="top-actions">
+        <button id="topHelpBtn" class="header-link" aria-label="How to play">HOW TO PLAY</button>
+        <button id="topGarageBtn" class="header-link" aria-label="Open the garage">GARAGE</button>
         <button id="soundBtn" class="icon-btn" aria-label="Toggle sound" title="Toggle sound">♪</button>
         <button id="pauseBtn" class="icon-btn" aria-label="Pause game" title="Pause game">Ⅱ</button>
       </div>
     </header>
 
-    <section class="game-frame" aria-label="Whitby Whippy Dash game">
+    <section class="game-frame" aria-label="Ice Cream Van Dash game">
       <canvas id="gameCanvas" width="960" height="540" aria-label="Pixel art game scene"></canvas>
 
       <section id="titleScreen" class="screen title-screen active">
         <div class="title-shade"></div>
         <div class="title-copy">
           <p class="eyebrow">A PROPER BRITISH ICE CREAM VAN GAME</p>
-          <h1><span>WHITBY</span><br>WHIPPY DASH</h1>
+          <img class="title-logo" src="assets/logos/ice-cream-van-dash-logo.png" alt="Ice Cream Van Dash">
           <p class="title-sub">Serve the queue. Upgrade the van.<br>Chase the perfect round.</p>
-          <button id="playBtn" class="pixel-btn primary">START YOUR ROUND</button>
-          <button id="howBtn" class="text-btn">HOW TO PLAY</button>
+          <div class="title-actions">
+            <button id="playBtn" class="pixel-btn primary">START YOUR ROUND</button>
+            <button id="howBtn" class="text-btn">HOW TO PLAY</button>
+          </div>
         </div>
         <div class="title-record">
           <small>CAREER BEST</small>
@@ -115,11 +128,11 @@
           <h2 id="helpHeading">KEEP THE QUEUE HAPPY</h2>
           <div class="help-steps">
             <article><b>1</b><div><strong>READ THE WHOLE BUBBLE</strong><p>Harder pitches include customers ordering two or three items. Finish every item before they leave.</p></div></article>
-            <article><b>2</b><div><strong>SWITCH MENU STATIONS</strong><p>Use the tabs for ice cream, cans, slushes and hot drinks. Keys 1–4 select the visible items.</p></div></article>
+            <article><b>2</b><div><strong>SCROLL THE FULL MENU</strong><p>Swipe or scroll sideways through every available item. Number keys select the first nine products.</p></div></article>
             <article><b>3</b><div><strong>WATCH YOUR STOCK</strong><p>Cans are quick, but the fridge runs out. Restocking occupies a preparation slot.</p></div></article>
             <article><b>4</b><div><strong>UPGRADE &amp; TRAVEL</strong><p>Improve each machine, handle group orders and unlock the complete world-tour menu.</p></div></article>
             <article><b>5</b><div><strong>WRONG ITEM? YOU PAY</strong><p>Selecting something nobody ordered deducts that item’s full price from today’s takings.</p></div></article>
-            <article><b>6</b><div><strong>QUICK-SERVE SHORTCUTS</strong><p>Press Space for the first waiting order. Use Q and E to move between menu stations.</p></div></article>
+            <article><b>6</b><div><strong>QUICK-SERVE SHORTCUTS</strong><p>Press Space for the first waiting order. Use Q and E to scroll along the full menu.</p></div></article>
           </div>
           <button id="helpBackBtn" class="pixel-btn primary">GOT IT</button>
         </div>
@@ -141,8 +154,8 @@
     <section id="serviceDeck" class="service-deck" aria-label="Ice cream service controls">
       <div class="deck-label"><span>HATCH MENU</span><small>MATCH THE CUSTOMER'S ORDER</small></div>
       <div class="menu-console">
-        <div id="categoryTabs" class="category-tabs" aria-label="Menu categories"></div>
-        <div id="productButtons" class="product-buttons"></div>
+        <div class="menu-rail-head" aria-hidden="true"><span>FULL MENU</span><small>SWIPE OR SCROLL TO BROWSE</small></div>
+        <div id="productButtons" class="product-buttons" tabindex="0" aria-label="Full serving menu. Scroll horizontally to browse every item."></div>
       </div>
       <div class="deck-meter">
         <small>QUEUE</small>

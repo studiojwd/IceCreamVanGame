@@ -43,6 +43,9 @@
 
   const EQUIPMENT_ASSETS = {
     machine: "assets/equipment/soft-serve-machine-aria.png",
+    machineUpgraded: "assets/equipment/soft-serve-machine-aria-pink.png",
+    battery: "assets/equipment/battery-inverter.png",
+    batteryUpgraded: "assets/equipment/battery-inverter-upgraded.png",
     slush: "assets/equipment/slush-machine-twin.png",
     slushUpgraded: "assets/equipment/slush-machine-twin-upgraded.png",
     cups: "assets/equipment/cup-lid-dispenser.png",
@@ -88,6 +91,10 @@
   const equipmentImages = loadImageSet(EQUIPMENT_ASSETS);
   const effectImages = loadImageSet(EFFECT_ASSETS);
   const vanImages = loadImageSet(Object.fromEntries(VAN_SKINS.map((skin) => [skin.id, skin.asset])));
+  const uiImages = loadImageSet({
+    logo: "assets/logos/ice-cream-van-dash-logo.png",
+    home: "assets/scenes/seaside-van-complete.png"
+  });
 
   const CUSTOMER_ASSETS = {
     summerWomanYoung: "assets/customers/customer-01-summer-woman-young.png",
@@ -142,11 +149,11 @@
   };
 
   const LOCATIONS = [
-    { id: "seaside", name: "Seaside", detail: "SEA BREEZE · STEADY QUEUE", difficulty: 1, unlock: 0, duration: 75, spawn: 3.5, patience: 18, mult: 1, groups: ["ice"], maxItems: 1, groupChance: 0, scene: "#38aee8", asset: "assets/location-seaside.jpg" },
+    { id: "christmas", name: "Christmas", detail: "FEATURED · HOT CHOCOLATE · FESTIVE FUN", difficulty: 1, unlock: 0, duration: 75, spawn: 3.5, patience: 18, mult: 1.1, groups: ["ice", "hot"], maxItems: 1, groupChance: 0, starterProducts: ["whippy", "hotChoc"], featured: true, scene: "#5267b7", asset: "assets/location-christmas.jpg" },
+    { id: "seaside", name: "Seaside", detail: "SEA BREEZE · STEADY QUEUE", difficulty: 1, unlock: 0, duration: 75, spawn: 3.5, patience: 18, mult: 1, groups: ["ice"], maxItems: 1, groupChance: 0, starterProducts: ["whippy", "flake"], scene: "#38aee8", asset: "assets/location-seaside.jpg" },
     { id: "village", name: "Village Fête", detail: "CANS · FAMILY RUSH", difficulty: 2, unlock: 2400, duration: 75, spawn: 3, patience: 17, mult: 1.15, groups: ["ice", "cans"], maxItems: 1, groupChance: 0, scene: "#54be75", asset: "assets/location-village.jpg" },
     { id: "football", name: "Football Match", detail: "GROUP ORDERS · HALF-TIME", difficulty: 3, unlock: 6500, duration: 80, spawn: 2.45, patience: 16, mult: 1.35, groups: ["ice", "cans"], maxItems: 2, groupChance: .42, scene: "#e9ad37", asset: "assets/location-football.jpg" },
     { id: "london", name: "London", detail: "SLUSHES · TOURIST GROUPS", difficulty: 3, unlock: 11500, duration: 82, spawn: 2.2, patience: 15.5, mult: 1.55, groups: ["ice", "cans", "slush"], maxItems: 2, groupChance: .5, scene: "#e36d55", asset: "assets/location-london.jpg" },
-    { id: "christmas", name: "Christmas", detail: "HOT CHOCOLATE · FESTIVE RUSH", difficulty: 4, unlock: 17500, duration: 85, spawn: 2.05, patience: 15, mult: 1.75, groups: ["ice", "hot"], maxItems: 2, groupChance: .55, scene: "#5267b7", asset: "assets/location-christmas.jpg" },
     { id: "market", name: "Evening Market", detail: "FULL MENU · TRIPLE ORDERS", difficulty: 5, unlock: 25000, duration: 85, spawn: 1.85, patience: 14.5, mult: 1.95, groups: ["ice", "cans", "slush", "hot"], maxItems: 3, groupChance: .62, scene: "#674f9c", asset: "assets/location-evening-market.jpg" },
     { id: "sydney", name: "Sydney Opera House", detail: "HEATWAVE · WORLD TOUR", difficulty: 5, unlock: 36000, duration: 90, spawn: 1.7, patience: 13.5, mult: 2.2, groups: ["ice", "cans", "slush"], maxItems: 3, groupChance: .7, scene: "#20a4de", asset: "assets/location-sydney.jpg" }
   ];
@@ -158,14 +165,14 @@
   }));
 
   const UPGRADES = [
-    { id: "machine", icon: "M", name: "ARIA Soft-Serve Machine", desc: "Whips cones and 99s 13% faster per level.", base: 120, equipment: ["machine", "machine"] },
+    { id: "machine", icon: "M", name: "ARIA Soft-Serve Machine", desc: "Whips cones and 99s 13% faster per level.", base: 120, equipment: ["machine", "machineUpgraded"] },
     { id: "heads", icon: "2×", name: "Twin-Head Setup", desc: "Adds simultaneous prep slots at levels 1 and 3.", base: 180 },
     { id: "freezer", icon: "F", name: "Display Freezer", desc: "Adds can stock and serves cans, lollies and sundaes faster.", base: 135, equipment: ["fridge", "fridgeUpgraded"] },
     { id: "slushMachine", icon: "S", name: "Slush Machine", desc: "Cuts slush preparation time by 13% per level.", base: 190, equipment: ["slush", "slushUpgraded"] },
     { id: "boiler", icon: "H", name: "Chocolate Boiler", desc: "Pours hot chocolate 13% faster per level.", base: 190, equipment: ["boiler", "boilerUpgraded"] },
     { id: "till", icon: "£", name: "Contactless Till", desc: "Faster payment keeps patience high and lifts every tip.", base: 150, equipment: ["till", "tillUpgraded"] },
     { id: "hatch", icon: "H", name: "Serving Hatch", desc: "A wider hatch holds a larger, more patient queue.", base: 165, equipment: ["cups", "cupsUpgraded"] },
-    { id: "power", icon: "⚡", name: "Battery & Inverter", desc: "Reliable electric power speeds up every order.", base: 210 }
+    { id: "power", icon: "⚡", name: "Battery & Inverter", desc: "Reliable electric power speeds up every order.", base: 210, equipment: ["battery", "batteryUpgraded"] }
   ];
 
   const DEFAULT_SAVE = {
@@ -203,6 +210,7 @@
   let mode = "title";
   let selectedLocation = 0;
   let previousScreen = "titleScreen";
+  let garageReturn = "locationScreen";
   let game = null;
   let lastTime = performance.now();
   let toastTimer = 0;
@@ -248,23 +256,37 @@
   function maxQueue() { return 5 + Math.floor(save.upgrades.hatch / 2); }
   function prepSlots() { return 1 + (save.upgrades.heads >= 1 ? 1 : 0) + (save.upgrades.heads >= 3 ? 1 : 0); }
 
-  function playTone(kind) {
+  const SOUND_PATTERNS = {
+    tap: [[320, 0, .05, "square", .022]],
+    ui: [[300, 0, .05, "square", .02], [450, .045, .05, "square", .018]],
+    serve: [[523, 0, .09, "square", .032], [659, .07, .09, "square", .032], [784, .14, .12, "square", .032]],
+    bad: [[180, 0, .12, "sawtooth", .035], [140, .09, .18, "sawtooth", .03]],
+    buy: [[440, 0, .08, "square", .03], [660, .08, .11, "square", .03]],
+    arrival: [[392, 0, .045, "square", .018], [523, .05, .06, "square", .018]],
+    start: [[262, 0, .07, "square", .026], [392, .08, .07, "square", .026], [523, .16, .12, "square", .03]],
+    restock: [[180, 0, .06, "square", .024], [230, .08, .06, "square", .024], [280, .16, .08, "square", .024]],
+    restockDone: [[392, 0, .06, "square", .024], [523, .06, .07, "square", .026], [659, .12, .1, "square", .028]],
+    result: [[523, 0, .09, "square", .028], [659, .08, .09, "square", .028], [784, .16, .12, "square", .03], [1047, .25, .15, "square", .026]],
+    pause: [[220, 0, .08, "triangle", .025], [165, .08, .12, "triangle", .024]]
+  };
+
+  function playTone(kind = "ui") {
     if (!save.sound) return;
     try {
       audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtx.state === "suspended") audioCtx.resume();
       const now = audioCtx.currentTime;
-      const notes = kind === "serve" ? [523, 659, 784] : kind === "bad" ? [180, 140] : kind === "buy" ? [440, 660] : [320];
-      notes.forEach((freq, i) => {
+      const pattern = SOUND_PATTERNS[kind] || SOUND_PATTERNS.ui;
+      pattern.forEach(([freq, offset, duration, type, volume]) => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.type = "square";
+        osc.type = type;
         osc.frequency.value = freq;
-        gain.gain.setValueAtTime(.035, now + i * .07);
-        gain.gain.exponentialRampToValueAtTime(.001, now + i * .07 + .11);
+        gain.gain.setValueAtTime(volume, now + offset);
+        gain.gain.exponentialRampToValueAtTime(.001, now + offset + duration);
         osc.connect(gain).connect(audioCtx.destination);
-        osc.start(now + i * .07);
-        osc.stop(now + i * .07 + .12);
+        osc.start(now + offset);
+        osc.stop(now + offset + duration + .01);
       });
     } catch (_) { /* audio is a bonus */ }
   }
@@ -280,54 +302,54 @@
     const groups = loc.groups;
     if (!groups.includes(selectedCategory)) selectedCategory = groups[0];
 
-    const tabs = $("categoryTabs");
-    tabs.innerHTML = "";
-    groups.forEach((group) => {
-      const tab = document.createElement("button");
-      tab.className = `category-tab${group === selectedCategory ? " active" : ""}`;
-      tab.textContent = PRODUCT_GROUPS[group].label;
-      tab.setAttribute("aria-pressed", group === selectedCategory ? "true" : "false");
-      tab.addEventListener("click", () => {
-        selectedCategory = group;
-        buildProductButtons();
-        updateButtons();
-      });
-      tabs.appendChild(tab);
-    });
-
     const holder = $("productButtons");
+    const priorScroll = holder.scrollLeft;
     holder.innerHTML = "";
-    const products = locationProducts(loc).filter((product) => product.group === selectedCategory);
+    const products = locationProducts(loc);
     visibleProductIds = products.map((product) => product.id);
     products.forEach((product, index) => {
-      const key = String(index + 1);
+      const key = index < 9 ? String(index + 1) : "";
       const button = document.createElement("button");
       button.className = "product-btn";
       button.dataset.product = product.id;
-      button.setAttribute("aria-label", `Prepare ${product.name}, key ${key}`);
+      button.dataset.group = product.group;
+      button.setAttribute("aria-label", `Prepare ${product.name}${key ? `, key ${key}` : ""}`);
       const stock = product.group === "cans" && game ? ` · STOCK ${game.canStock[product.id]}` : "";
-      button.innerHTML = `<canvas width="48" height="48" aria-hidden="true"></canvas><span><strong>${product.short}</strong><small>£${product.price}${stock}</small></span><i class="key">${key}</i>`;
+      button.innerHTML = `<canvas width="48" height="48" aria-hidden="true"></canvas><span><strong>${product.short}</strong><small>£${product.price}${stock}</small><em>${PRODUCT_GROUPS[product.group].label}</em></span>${key ? `<i class="key">${key}</i>` : ""}`;
       button.addEventListener("click", () => startProduct(product.id));
       holder.appendChild(button);
       const iconCtx = button.querySelector("canvas").getContext("2d");
       iconCtx.imageSmoothingEnabled = false;
       drawTreat(iconCtx, product.id, 24, 24, 1.15);
       button.style.setProperty("--order", index);
+      const nextProduct = products[index + 1];
+      if (product.group === "cans" && nextProduct?.group !== "cans") {
+        const restock = document.createElement("button");
+        restock.id = "restockBtn";
+        restock.className = "product-btn restock-btn";
+        restock.setAttribute("aria-label", "Restock canned drinks");
+        restock.innerHTML = `<img class="restock-art" src="${EQUIPMENT_ASSETS.restockBox}" alt="" aria-hidden="true"><span><strong>RESTOCK</strong><small>REFILL THE FRIDGE</small><em>COLD CANS</em></span>`;
+        restock.addEventListener("click", restockCans);
+        holder.appendChild(restock);
+      }
     });
-
-    if (selectedCategory === "cans") {
-      const restock = document.createElement("button");
-      restock.id = "restockBtn";
-      restock.className = "product-btn restock-btn";
-      restock.setAttribute("aria-label", "Restock canned drinks");
-      restock.innerHTML = `<img class="restock-art" src="${EQUIPMENT_ASSETS.restockBox}" alt="" aria-hidden="true"><span><strong>RESTOCK</strong><small>REFILL THE FRIDGE</small></span>`;
-      restock.addEventListener("click", restockCans);
-      holder.appendChild(restock);
+    if (!holder.dataset.wheelReady) {
+      holder.addEventListener("wheel", (event) => {
+        if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+        event.preventDefault();
+        holder.scrollLeft += event.deltaY;
+      }, { passive: false });
+      holder.dataset.wheelReady = "true";
     }
+    requestAnimationFrame(() => { holder.scrollLeft = priorScroll; });
   }
 
   function refreshHeader() {
-    const active = game && (mode === "playing" || mode === "paused");
+    const active = game && !game.ended && (
+      mode === "playing" || mode === "paused" ||
+      (mode === "help" && ["game", "pauseScreen"].includes(previousScreen)) ||
+      (mode === "garage" && ["game", "pauseScreen"].includes(garageReturn))
+    );
     $("scoreValue").textContent = formatScore(active ? game.score : 0);
     $("cashValue").textContent = formatMoney(active ? game.cash : save.bank);
     $("timeValue").textContent = formatTime(active ? game.time : LOCATIONS[selectedLocation].duration);
@@ -351,7 +373,10 @@
       button.disabled = !isOpen;
       const unlockProgress = loc.unlock ? Math.min(1, best / loc.unlock) : 1;
       const unlockLabel = isOpen ? "PITCH OPEN" : `${formatScore(Math.max(0, loc.unlock - best))} TO GO`;
-      button.innerHTML = `${isOpen ? "" : `<span class="lock">SCORE ${formatScore(loc.unlock)} TO UNLOCK</span>`}<strong>${loc.name}</strong><small>${loc.detail}</small><span class="pitch-meta"><em>${unlockLabel}</em><em>DIFFICULTY ${"◆".repeat(loc.difficulty)}</em></span>${isOpen ? "" : `<span class="unlock-progress" aria-hidden="true"><i style="width:${Math.round(unlockProgress * 100)}%"></i></span>`}<small class="record">BEST ${formatScore(save.highs[loc.id])}</small>`;
+      const badge = !isOpen
+        ? `<span class="lock">SCORE ${formatScore(loc.unlock)} TO UNLOCK</span>`
+        : loc.featured ? `<span class="featured">★ FEATURED PITCH</span>` : "";
+      button.innerHTML = `${badge}<strong>${loc.name}</strong><small>${loc.detail}</small><span class="pitch-meta"><em>${unlockLabel}</em><em>DIFFICULTY ${"◆".repeat(loc.difficulty)}</em></span>${isOpen ? "" : `<span class="unlock-progress" aria-hidden="true"><i style="width:${Math.round(unlockProgress * 100)}%"></i></span>`}<small class="record">BEST ${formatScore(save.highs[loc.id])}</small>`;
       button.addEventListener("click", () => {
         selectedLocation = index;
         renderLocations();
@@ -428,11 +453,72 @@
     refreshHeader();
   }
 
-  function openGarage() {
-    mode = "menu";
+  function activeScreenId() {
+    return screens.find((screen) => screen.classList.contains("active"))?.id || null;
+  }
+
+  function currentContext() {
+    const active = activeScreenId();
+    if (active === "helpScreen") return previousScreen;
+    if (mode === "playing") return "game";
+    return active || (game && !game.ended ? "game" : "titleScreen");
+  }
+
+  function restoreContext(context) {
+    if (context === "game" && game && !game.ended) {
+      mode = "playing";
+      showScreen(null);
+      lastTime = performance.now();
+      updateButtons();
+    } else if (context === "pauseScreen" && game && !game.ended) {
+      mode = "paused";
+      showScreen("pauseScreen");
+      updateButtons();
+    } else if (context === "locationScreen") {
+      openLocations();
+      return;
+    } else if (context === "garageScreen") {
+      mode = "garage";
+      renderGarage();
+      showScreen("garageScreen");
+    } else if (context === "resultsScreen" && game?.ended) {
+      mode = "results";
+      showScreen("resultsScreen");
+    } else {
+      mode = "title";
+      showScreen("titleScreen");
+    }
+    refreshHeader();
+  }
+
+  function openHelp(returnTo = currentContext()) {
+    previousScreen = returnTo;
+    mode = "help";
+    $("helpBackBtn").textContent = ["game", "pauseScreen"].includes(returnTo) ? "BACK TO THE HATCH" : "GOT IT";
+    showScreen("helpScreen");
+    refreshHeader();
+    playTone("ui");
+  }
+
+  function closeHelp() {
+    restoreContext(previousScreen);
+    playTone("ui");
+  }
+
+  function openGarage(returnTo = "locationScreen") {
+    garageReturn = returnTo;
+    mode = "garage";
+    const labels = { game: "BACK TO THE HATCH", pauseScreen: "BACK TO PAUSE", resultsScreen: "BACK TO RESULTS", titleScreen: "BACK TO TITLE" };
+    $("garageBackBtn").textContent = labels[returnTo] || "BACK TO LOCATIONS";
     renderGarage();
     showScreen("garageScreen");
     refreshHeader();
+    playTone("ui");
+  }
+
+  function closeGarage() {
+    restoreContext(garageReturn);
+    playTone("ui");
   }
 
   function startRound(index) {
@@ -468,7 +554,7 @@
     updateQueueUI();
     refreshHeader();
     showToast(`${loc.name.toUpperCase()} · HATCH OPEN`, "good");
-    playTone("buy");
+    playTone("start");
   }
 
   function endRound(quit = false) {
@@ -503,13 +589,15 @@
     showScreen("resultsScreen");
     $("gameStatus").textContent = `Shift ended. ${game.served} customers served, ${game.lost} missed, ${game.mistakes} mistakes, ${formatMoney(quit ? 0 : game.cash)} takings.`;
     refreshHeader();
+    playTone(quit ? "bad" : "result");
   }
 
   function addCustomer() {
     if (!game || game.customers.length >= maxQueue()) return false;
-    const locIndex = LOCATIONS.indexOf(game.loc);
     let pool = locationProducts(game.loc);
-    if (locIndex === 0 && game.elapsed < 12) pool = pool.slice(0, 2);
+    if (game.elapsed < 12 && game.loc.starterProducts) {
+      pool = game.loc.starterProducts.map((id) => PRODUCTS.find((product) => product.id === id)).filter(Boolean);
+    }
     let itemCount = 1;
     if (game.loc.maxItems >= 2 && Math.random() < game.loc.groupChance) itemCount = 2;
     if (game.loc.maxItems >= 3 && itemCount === 2 && Math.random() < .42) itemCount = 3;
@@ -534,6 +622,7 @@
       mistakePulse: 0
     });
     updateQueueUI();
+    playTone("arrival");
     return true;
   }
 
@@ -562,6 +651,7 @@
   function startProduct(productId) {
     if (mode !== "playing" || !game || game.ended) return;
     const product = PRODUCTS.find(p => p.id === productId);
+    selectedCategory = product.group;
     if (product.group === "cans" && game.canStock[productId] <= 0) {
       showToast(`${product.short} SOLD OUT · RESTOCK THE FRIDGE`, "bad");
       pushEffect("soldOut", 760, 235, 78, 1.1, 6);
@@ -595,7 +685,7 @@
     const duration = Math.max(.65, 1.8 - save.upgrades.freezer * .18);
     game.prep.push({ kind: "restock", type: "restock", elapsed: 0, duration });
     showToast("RESTOCKING THE DRINKS FRIDGE");
-    playTone("tap");
+    playTone("restock");
     updateButtons();
   }
 
@@ -606,7 +696,7 @@
     updateButtons();
     pushEffect("fizz", 760, 235, 70, 1, 8);
     showToast("DRINKS FRIDGE FULL", "good");
-    playTone("buy");
+    playTone("restockDone");
   }
 
   function pushEffect(effect, x, y, size = 64, life = 1, rise = 14, vx = 0) {
@@ -794,6 +884,12 @@
   }
 
   function rect(c, x, y, w, h, color) { c.fillStyle = color; c.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); }
+  function roundedRect(c, x, y, w, h, radius, color) {
+    c.fillStyle = color;
+    c.beginPath();
+    c.roundRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h), radius);
+    c.fill();
+  }
   function line(c, x1, y1, x2, y2, color, width = 2) { c.strokeStyle = color; c.lineWidth = width; c.beginPath(); c.moveTo(Math.round(x1), Math.round(y1)); c.lineTo(Math.round(x2), Math.round(y2)); c.stroke(); }
 
   function pixelText(c, text, x, y, size, color, align = "left") {
@@ -1081,9 +1177,8 @@
         ? (save.upgrades.slushMachine >= 2 ? "slushUpgraded" : "slush")
         : selectedCategory === "hot"
           ? (save.upgrades.boiler >= 2 ? "boilerUpgraded" : "boiler")
-          : null;
+          : (save.upgrades.machine >= 2 ? "machineUpgraded" : "machine");
     if (stationEquipment) drawEquipment(stationEquipment,x+382,y+109,72);
-    else { drawTreat(ctx,"whippy",x+357,y+111,.65); drawTreat(ctx,"flake",x+382,y+111,.65); drawTreat(ctx,"lolly",x+406,y+111,.65); }
     rect(ctx,x+486,y+44,41,105,"#dce9ee");
     rect(ctx,x+91,y+208,61,25,"#10243f"); rect(ctx,x+430,y+208,61,25,"#10243f");
     ctx.fillStyle="#10243f";ctx.beginPath();ctx.arc(x+121,y+220,38,0,Math.PI*2);ctx.arc(x+460,y+220,38,0,Math.PI*2);ctx.fill();
@@ -1129,7 +1224,7 @@
         ? (save.upgrades.slushMachine >= 2 ? "slushUpgraded" : "slush")
         : selectedCategory === "hot"
           ? (save.upgrades.boiler >= 2 ? "boilerUpgraded" : "boiler")
-          : "machine";
+          : (save.upgrades.machine >= 2 ? "machineUpgraded" : "machine");
     drawEquipment(stationEquipment, hatchX + 157, hatchY + 48, 72);
     drawEquipment(save.upgrades.till >= 2 ? "tillUpgraded" : "till", hatchX + 222, hatchY + 48, 52);
 
@@ -1237,7 +1332,7 @@
     }
     if (customer.status !== "waiting") return;
     const bubbleW=Math.max(56,customer.orders.length*34+14),bubbleX=x-bubbleW/2,bubbleY=y-126-(index%2)*58;
-    rect(ctx,bubbleX-4,bubbleY-4,bubbleW+8,55,"#10243f"); rect(ctx,bubbleX,bubbleY,bubbleW,47,"#fffdf4");
+    roundedRect(ctx,bubbleX-4,bubbleY-4,bubbleW+8,55,11,"#10243f"); roundedRect(ctx,bubbleX,bubbleY,bubbleW,47,8,"#fffdf4");
     ctx.fillStyle="#10243f";ctx.beginPath();ctx.moveTo(x-5,bubbleY+51);ctx.lineTo(x+7,bubbleY+51);ctx.lineTo(x+1,bubbleY+61);ctx.fill();
     customer.orders.forEach((order,itemIndex)=>{
       const itemX=bubbleX+17+itemIndex*34;
@@ -1304,6 +1399,7 @@
     showScreen("pauseScreen");
     updateButtons();
     refreshHeader();
+    playTone("pause");
   }
 
   function resumeGame() {
@@ -1313,36 +1409,50 @@
     lastTime = performance.now();
     updateButtons();
     refreshHeader();
+    playTone("ui");
   }
 
-  function cycleCategory(direction) {
+  function scrollMenu(direction) {
     if (mode !== "playing" || !game) return;
-    const groups = game.loc.groups;
-    if (groups.length < 2) return;
-    const current = Math.max(0, groups.indexOf(selectedCategory));
-    selectedCategory = groups[(current + direction + groups.length) % groups.length];
-    buildProductButtons();
-    updateButtons();
-    showToast(`${PRODUCT_GROUPS[selectedCategory].label} STATION`);
+    $("productButtons").scrollBy({ left: direction * 260, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   }
 
   $("playBtn").addEventListener("click", () => {
     if (!save.helpSeen) {
-      previousScreen = "locationScreen";
-      save.helpSeen = true; persist();
-      showScreen("helpScreen");
+      save.helpSeen = true;
+      persist();
+      openHelp("locationScreen");
     } else openLocations();
   });
-  $("howBtn").addEventListener("click", () => { previousScreen = "titleScreen"; showScreen("helpScreen"); });
-  $("helpBackBtn").addEventListener("click", () => previousScreen === "locationScreen" ? openLocations() : showScreen("titleScreen"));
-  $("backTitleBtn").addEventListener("click", () => { mode="title"; showScreen("titleScreen"); refreshHeader(); });
+  $("howBtn").addEventListener("click", () => openHelp("titleScreen"));
+  $("helpBackBtn").addEventListener("click", closeHelp);
+  $("backTitleBtn").addEventListener("click", () => { mode="title"; showScreen("titleScreen"); refreshHeader(); playTone("ui"); });
   $("brandBtn").addEventListener("click", () => {
-    if (mode === "playing") { pauseGame(); return; }
-    mode="title"; showScreen("titleScreen"); refreshHeader();
+    const roundContext = game && !game.ended && (
+      ["playing", "paused"].includes(mode) ||
+      (mode === "help" && ["game", "pauseScreen"].includes(previousScreen)) ||
+      (mode === "garage" && ["game", "pauseScreen"].includes(garageReturn))
+    );
+    if (roundContext) {
+      restoreContext("pauseScreen");
+      return;
+    }
+    mode="title"; showScreen("titleScreen"); refreshHeader(); playTone("ui");
   });
-  $("garageBtn").addEventListener("click", openGarage);
-  $("garageBackBtn").addEventListener("click", openLocations);
-  $("resultsGarageBtn").addEventListener("click", openGarage);
+  $("garageBtn").addEventListener("click", () => openGarage("locationScreen"));
+  $("garageBackBtn").addEventListener("click", closeGarage);
+  $("resultsGarageBtn").addEventListener("click", () => openGarage("resultsScreen"));
+  $("topHelpBtn").addEventListener("click", () => openHelp(currentContext()));
+  $("topGarageBtn").addEventListener("click", () => {
+    const active = activeScreenId();
+    if (active === "garageScreen") return;
+    if (active === "helpScreen" && previousScreen === "garageScreen") {
+      restoreContext("garageScreen");
+      playTone("ui");
+      return;
+    }
+    openGarage(active === "helpScreen" ? previousScreen : currentContext());
+  });
   $("locationsBtn").addEventListener("click", openLocations);
   $("againBtn").addEventListener("click", () => startRound(selectedLocation));
   $("pauseBtn").addEventListener("click", pauseGame);
@@ -1360,20 +1470,64 @@
       const itemIndex = first?.completed.findIndex((done) => !done);
       if (first && itemIndex >= 0) {
         const product = PRODUCTS.find((item) => item.id === first.orders[itemIndex]);
-        if (product.group !== selectedCategory) { selectedCategory = product.group; buildProductButtons(); }
         startProduct(product.id);
       }
     }
-    if ((event.key.toLowerCase() === "q" || event.key === "ArrowLeft") && mode === "playing") { event.preventDefault(); cycleCategory(-1); }
-    if ((event.key.toLowerCase() === "e" || event.key === "ArrowRight") && mode === "playing") { event.preventDefault(); cycleCategory(1); }
-    if (event.key === "Escape") { if (mode === "playing") pauseGame(); else if (mode === "paused") resumeGame(); }
+    if ((event.key.toLowerCase() === "q" || event.key === "ArrowLeft") && mode === "playing") { event.preventDefault(); scrollMenu(-1); }
+    if ((event.key.toLowerCase() === "e" || event.key === "ArrowRight") && mode === "playing") { event.preventDefault(); scrollMenu(1); }
+    if (event.key === "Escape") {
+      if (mode === "playing") pauseGame();
+      else if (mode === "paused") resumeGame();
+      else if (mode === "help") closeHelp();
+      else if (mode === "garage") closeGarage();
+    }
   });
 
   document.addEventListener("visibilitychange", () => { if (document.hidden && mode === "playing") pauseGame(); });
+
+  async function runLoadingScreen() {
+    const loader = $("loadingScreen");
+    const bar = $("loadingBar");
+    const label = $("loadingPercent");
+    if (!loader || !bar || !label) return;
+    const imageSets = [productImages, equipmentImages, effectImages, vanImages, customerImages, locationImages, uiImages];
+    const imageMap = new Map();
+    imageSets.flatMap((set) => Object.values(set)).forEach((image) => imageMap.set(image.src, image));
+    const images = [...imageMap.values()];
+    let complete = 0;
+    const update = () => {
+      const percent = images.length ? Math.round(complete / images.length * 100) : 100;
+      bar.style.width = `${percent}%`;
+      label.textContent = `LOADING ${percent}%`;
+    };
+    const waitForImage = (image) => new Promise((resolve) => {
+      const done = () => { complete += 1; update(); resolve(); };
+      if (image.complete) done();
+      else {
+        image.addEventListener("load", done, { once: true });
+        image.addEventListener("error", done, { once: true });
+      }
+    });
+    update();
+    const preload = Promise.all([
+      ...images.map(waitForImage),
+      document.fonts?.ready || Promise.resolve()
+    ]);
+    await Promise.all([
+      Promise.race([preload, new Promise((resolve) => setTimeout(resolve, 6000))]),
+      new Promise((resolve) => setTimeout(resolve, 500))
+    ]);
+    complete = images.length;
+    update();
+    await new Promise((resolve) => setTimeout(resolve, 140));
+    loader.classList.add("ready");
+    setTimeout(() => loader.remove(), 500);
+  }
 
   buildProductButtons();
   updateQueueUI();
   refreshHeader();
   showScreen("titleScreen");
+  runLoadingScreen();
   requestAnimationFrame(loop);
 })();
