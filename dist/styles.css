@@ -16,7 +16,7 @@
 
 * { box-sizing: border-box; }
 
-html, body { margin: 0; min-height: 100%; background: var(--ink); color: var(--paper); }
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: var(--ink); color: var(--paper); }
 
 body {
   min-height: 100dvh;
@@ -31,6 +31,7 @@ body {
 }
 
 button { font: inherit; }
+button, [role="button"] { touch-action: manipulation; }
 
 .loading-screen {
   position: fixed;
@@ -68,7 +69,7 @@ button { font: inherit; }
 
 button:focus-visible { outline: 4px solid var(--yellow); outline-offset: 3px; }
 
-#app { min-height: 100dvh; display: grid; grid-template-rows: 74px minmax(0, 1fr) auto; }
+#app { height: 100dvh; min-height: 0; display: grid; grid-template-rows: 74px minmax(0, 1fr) auto; overflow: hidden; }
 
 .topbar {
   display: grid;
@@ -118,8 +119,8 @@ button:focus-visible { outline: 4px solid var(--yellow); outline-offset: 3px; }
 .icon-btn { width: 40px; height: 40px; border: 3px solid var(--ink); background: var(--paper); color: var(--ink); box-shadow: 3px 3px 0 var(--ink); cursor: pointer; font-weight: 900; }
 .icon-btn:hover { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
 
-.game-frame { position: relative; width: min(100%, 1440px); align-self: center; justify-self: center; overflow: hidden; background: #56bde9; border-inline: 4px solid #071628; }
-#gameCanvas { display: block; width: 100%; max-height: calc(100dvh - 202px); aspect-ratio: 16/9; object-fit: contain; background: #56bde9; image-rendering: pixelated; }
+.game-frame { position: relative; width: min(100%, 1440px); height: 100%; min-height: 0; align-self: center; justify-self: center; overflow: hidden; background: #56bde9; border-inline: 4px solid #071628; }
+#gameCanvas { display: block; width: 100%; height: 100%; max-height: calc(100dvh - 202px); aspect-ratio: 16/9; object-fit: contain; background: #56bde9; image-rendering: pixelated; }
 .game-frame:not(:has(.screen.active)) { width: min(100%, 1440px, calc(177.78dvh - 359.11px)); }
 .game-frame:has(.screen.active) { height: calc(100dvh - 74px); max-height: 900px; }
 .game-frame:has(.screen.active) #gameCanvas { height: 100%; max-height: none; object-fit: cover; }
@@ -291,35 +292,64 @@ h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
 @keyframes flash { 50% { opacity: .45; } }
 
 @media (max-width: 900px) {
-  #app { grid-template-rows: 64px auto auto; align-content: start; }
-  .topbar { grid-template-columns: auto 1fr auto; min-height: 64px; padding: 7px 12px; }
+  html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+  #app { height: 100dvh; min-height: 0; grid-template-rows: 56px minmax(0, 1fr) auto; overflow: hidden; }
+  .topbar { grid-template-columns: auto 1fr auto; min-height: 56px; padding: 5px 10px; border-bottom-width: 4px; box-shadow: 0 3px 0 var(--shadow); }
   .brand em { display: none; }
   .brand strong { font-size: 1.05rem; }
-  .brand > img { width: 42px; height: 42px; }
+  .brand > img { width: 38px; height: 38px; }
   .top-stats { gap: 12px; justify-self: center; }
   .top-stats small { font-size: .55rem; }
   .top-stats b { font-size: .83rem; }
   .combo-stat { display: none !important; }
-  .icon-btn { width: 34px; height: 34px; }
-  .header-link { min-height: 34px; padding-inline: 7px; font-size: .52rem; }
-  .game-frame { border: 0; }
-  .game-frame:has(.screen.active) { height: calc(100dvh - 64px); max-height: none; }
-  #gameCanvas { max-height: none; }
+  .icon-btn { width: 32px; height: 32px; }
+  .header-link { min-height: 32px; padding-inline: 6px; font-size: .5rem; }
+  .game-frame,
+  .game-frame:not(:has(.screen.active)),
+  .game-frame:has(.screen.active) { width: 100%; height: 100%; min-height: 0; max-height: none; align-self: stretch; border: 0; }
+  #gameCanvas,
+  .game-frame:has(.screen.active) #gameCanvas { width: 100%; height: 100%; max-height: none; aspect-ratio: auto; object-fit: cover; object-position: center center; }
+  .menu-screen { padding: 8px; }
+  .menu-panel { max-height: calc(100% - 8px); overscroll-behavior: contain; border-width: 3px; box-shadow: 4px 4px 0 var(--red); }
   .location-grid { grid-template-columns: 1fr 1fr; }
   .upgrade-grid { grid-template-columns: 1fr 1fr; }
   .van-skin-grid { grid-template-columns: 1fr 1fr; }
-  .service-deck { grid-template-columns: 1fr; gap: 8px; padding: 9px 12px 12px; }
-  .deck-label, .deck-meter { display: none; }
-  .product-buttons { width: 100%; }
-  .menu-rail-head { margin-bottom: 4px; }
-  .product-btn { flex-basis: 175px; min-height: 62px; grid-template-columns: 40px 1fr; padding: 5px 7px; }
+  .service-deck { position: relative; grid-template-columns: 1fr; min-height: 78px; gap: 0; padding: 5px 7px max(7px, env(safe-area-inset-bottom)); border-top-width: 4px; }
+  .deck-label { display: none; }
+  .deck-meter { position: absolute; right: 8px; top: -40px; z-index: 5; display: block; min-width: 0; padding: 5px 8px; border: 2px solid var(--ink); border-bottom: 0; border-radius: 10px 10px 0 0; background: rgba(255,253,244,.95); box-shadow: 2px -2px 0 var(--ink); }
+  .deck-meter small { display: none; }
+  .queue-pips { gap: 2px; margin: 0 0 3px; }
+  .queue-pips i { width: 9px; height: 7px; border-width: 1px; }
+  .deck-meter > span { display: block; font-size: .53rem; text-align: center; }
+  .product-buttons { width: 100%; gap: 7px; padding: 2px 5px 5px 2px; touch-action: pan-x; scrollbar-width: none; }
+  .product-buttons::-webkit-scrollbar { display: none; }
+  .menu-rail-head { min-height: 12px; margin: 0 2px 3px; }
+  .product-btn { flex-basis: 132px; min-height: 56px; grid-template-columns: 36px 1fr; padding: 4px 6px; border-width: 2px; box-shadow: 2px 2px 0 var(--ink); }
   .product-btn canvas { width: 36px; height: 36px; }
+  .product-btn span strong { font-size: .86rem; }
+  .product-btn span small { font-size: .48rem; }
+  .product-btn span em, .product-btn .key { display: none; }
+}
+
+@media (max-width: 900px) and (orientation: landscape) {
+  #app { grid-template-rows: 48px minmax(0, 1fr); }
+  .topbar { min-height: 48px; padding-block: 3px; }
+  .brand > img { width: 34px; height: 34px; }
+  .game-frame { grid-row: 2; }
+  #gameCanvas,
+  .game-frame:has(.screen.active) #gameCanvas { object-position: center bottom; }
+  .service-deck { position: fixed; left: 10vw; right: 10vw; bottom: max(6px, env(safe-area-inset-bottom)); z-index: 22; min-height: 62px; padding: 4px 7px; border: 3px solid var(--ink); border-radius: 12px; background: rgba(255,253,244,.96); box-shadow: 4px 4px 0 var(--ink); }
+  .menu-rail-head { display: none; }
+  .product-buttons { padding-bottom: 2px; }
+  .product-btn { flex-basis: 122px; min-height: 52px; }
+  .deck-meter { top: -37px; }
+  .game-frame:has(.screen.active) + .service-deck { display: none; }
 }
 
 @media (max-width: 570px) {
   .topbar { grid-template-columns: auto 1fr auto; }
   .brand span:last-child { display: none; }
-  .brand > img { width: 36px; height: 36px; }
+  .brand > img { width: 34px; height: 34px; }
   .top-stats { gap: 8px; }
   .top-stats span:nth-child(3) { display: none; }
   .top-actions { gap: 5px; }
@@ -348,12 +378,8 @@ h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
   .help-steps { grid-template-columns: 1fr; }
   .menu-panel { padding: 19px; }
   .menu-rail-head small { font-size: .48rem; }
-  .product-buttons { gap: 7px; padding-bottom: 8px; }
-  .product-btn { flex-basis: 142px; min-height: 58px; grid-template-columns: 36px 1fr; border-width: 2px; box-shadow: 2px 2px 0 var(--ink); }
-  .product-btn span strong { font-size: .82rem; }
-  .product-btn span small { font-size: .48rem; }
-  .product-btn span em { display: none; }
-  .product-btn .key { display: none; }
+  .product-buttons { gap: 6px; padding-bottom: 5px; }
+  .product-btn { flex-basis: 128px; min-height: 54px; }
   .result-grid { gap: 0; }
   .score-entry-controls { grid-template-columns: 1fr; }
   .leaderboard-heading { display: grid; }

@@ -1292,7 +1292,11 @@
     pixelText(ctx,"WHITBY MORRISON COACHBUILT",x+345,y+183,10,"#fffdf4","center");
   }
 
-  function drawVan() {
+  function compactPortraitStage() {
+    return window.matchMedia("(max-width: 900px) and (orientation: portrait)").matches;
+  }
+
+  function drawVanArtwork() {
     const skin = VAN_SKINS.find((candidate) => candidate.id === save.vanSkin) || VAN_SKINS[0];
     const image = vanImages[skin.id];
     if (!image?.complete || !image.naturalWidth) {
@@ -1334,6 +1338,23 @@
       ? ["whippy", "flake", "lolly"]
       : locationProducts().filter((product) => product.group === selectedCategory).slice(0, 3).map((product) => product.id);
     showcase.forEach((product, index) => drawTreat(ctx, product, hatchX + 41 + index * 34, hatchY + 46, .58));
+  }
+
+  function drawVan() {
+    if (!compactPortraitStage()) {
+      drawVanArtwork();
+      return;
+    }
+
+    // Portrait phones only expose the centre slice of the 16:9 stage. Scale the
+    // van into that slice so it reads as the counter, rather than disappearing
+    // beyond the crop. Customers are rendered afterwards and therefore queue
+    // naturally in front of it.
+    ctx.save();
+    ctx.translate(292, 195);
+    ctx.scale(.58, .58);
+    drawVanArtwork();
+    ctx.restore();
   }
 
   function cleanCustomerSheet(character) {
@@ -1391,7 +1412,7 @@
   function drawCustomerSprite(customer, x, y, frame, flip, moving) {
     const crop = customerFrameCrop(customer.character, frame);
     if (!crop) return false;
-    const height = 118;
+    const height = compactPortraitStage() ? 106 : 118;
     const scale = height / crop.h;
     const width = crop.w * scale;
     const step = Math.sin((game.elapsed + customer.phase) * 15);
@@ -1412,11 +1433,14 @@
   }
 
   function drawCustomer(customer, index, total) {
-    const spacing = Math.min(76, 310 / Math.max(1, total));
+    const portrait = compactPortraitStage();
+    const spacing = portrait ? Math.min(58, 230 / Math.max(1, total)) : Math.min(76, 310 / Math.max(1, total));
     const moving = customer.entering > 0 || customer.status === "leaving";
-    const x = 650 + index * spacing + customer.entering * 145 + (customer.exiting || 0) * 175;
+    const x = portrait
+      ? 360 + index * spacing + customer.entering * 115 + (customer.exiting || 0) * 145
+      : 650 + index * spacing + customer.entering * 145 + (customer.exiting || 0) * 175;
     const bob = Math.round(Math.sin((game.elapsed + customer.phase) * (moving ? 8 : 4)) * (moving ? 1 : 2));
-    const y = 372 + bob;
+    const y = (portrait ? 418 : 372) + bob;
     const ratio = Math.max(0, customer.patience / customer.maxPatience);
     let frame = 0;
     if (moving) frame = 4;
@@ -1433,7 +1457,7 @@
       rect(ctx,x-22,y+41,19,7,"#10243f"); rect(ctx,x+4,y+41,19,7,"#10243f");
     }
     if (customer.status !== "waiting") return;
-    const bubbleW=Math.max(56,customer.orders.length*34+14),bubbleX=x-bubbleW/2,bubbleY=y-126-(index%2)*58;
+    const bubbleW=Math.max(56,customer.orders.length*34+14),bubbleX=x-bubbleW/2,bubbleY=y-(portrait?122:126)-(index%2)*(portrait?52:58);
     roundedRect(ctx,bubbleX-4,bubbleY-4,bubbleW+8,55,11,"#10243f"); roundedRect(ctx,bubbleX,bubbleY,bubbleW,47,8,"#fffdf4");
     ctx.fillStyle="#10243f";ctx.beginPath();ctx.moveTo(x-5,bubbleY+51);ctx.lineTo(x+7,bubbleY+51);ctx.lineTo(x+1,bubbleY+61);ctx.fill();
     customer.orders.forEach((order,itemIndex)=>{
