@@ -24,9 +24,9 @@
     { id: "slushRed", group: "slush", name: "Cherry Slush", short: "RED SLUSH", price: 4, points: 190, prep: 2.1, asset: "slush-red.png" },
     { id: "slushBlue", group: "slush", name: "Blue Slush", short: "BLUE SLUSH", price: 4, points: 190, prep: 2.1, asset: "slush-blue.png" },
     { id: "slushMix", group: "slush", name: "Mixed Slush", short: "MIXED SLUSH", price: 5, points: 250, prep: 2.8, asset: "slush-mixed.png" },
-    { id: "hotChoc", group: "hot", name: "Hot Chocolate", short: "HOT CHOC", price: 4, points: 200, prep: 2.3, asset: "hot-chocolate-plain.png" },
-    { id: "hotCream", group: "hot", name: "Cream Hot Chocolate", short: "+ CREAM", price: 5, points: 260, prep: 3, asset: "hot-chocolate-cream.png" },
-    { id: "hotDeluxe", group: "hot", name: "Marshmallow Hot Chocolate", short: "MALLOW CHOC", price: 6, points: 320, prep: 3.6, asset: "hot-chocolate-marshmallows.png" }
+    { id: "hotChoc", group: "hot", name: "Hot Chocolate", short: "HOT CHOC", orderTag: "PLAIN", orderColor: "#8c4329", price: 4, points: 200, prep: 2.3, asset: "hot-chocolate-plain.png" },
+    { id: "hotCream", group: "hot", name: "Cream Hot Chocolate", short: "+ CREAM", orderTag: "CREAM", orderColor: "#e7a55d", price: 5, points: 260, prep: 3, asset: "hot-chocolate-cream.png" },
+    { id: "hotDeluxe", group: "hot", name: "Marshmallow Hot Chocolate", short: "MALLOW CHOC", orderTag: "MALLOWS", orderColor: "#e56f9e", price: 6, points: 320, prep: 3.6, asset: "hot-chocolate-marshmallows.png" }
   ];
 
   const PRODUCT_ASSETS = {
@@ -233,6 +233,9 @@
   let visibleProductIds = [];
   let pendingScoreFlush = null;
   let leaderboardRenderToken = 0;
+  // Menus use a blurred canvas backdrop. Freeze the scene while an overlay is open
+  // so Safari does not flash between canvas repaints during screen transitions.
+  let sceneDirty = true;
 
   const customerLooks = [
     ["#f1b888", "#59311f", "#e93448"], ["#9a603d", "#17131a", "#33a8e8"],
@@ -246,6 +249,7 @@
 
   function showScreen(id) {
     screens.forEach((screen) => screen.classList.toggle("active", screen.id === id));
+    sceneDirty = true;
   }
 
   function showToast(message, tone = "normal") {
@@ -1682,18 +1686,24 @@
       rect(ctx,x-22,y+41,19,7,"#10243f"); rect(ctx,x+4,y+41,19,7,"#10243f");
     }
     if (customer.status !== "waiting") return;
-    const bubbleW=Math.max(56,customer.orders.length*34+14),bubbleX=x-bubbleW/2,bubbleY=y-(portrait?122:126)-(index%2)*(portrait?52:58);
-    roundedRect(ctx,bubbleX-4,bubbleY-4,bubbleW+8,55,11,"#10243f"); roundedRect(ctx,bubbleX,bubbleY,bubbleW,47,8,"#fffdf4");
-    ctx.fillStyle="#10243f";ctx.beginPath();ctx.moveTo(x-5,bubbleY+51);ctx.lineTo(x+7,bubbleY+51);ctx.lineTo(x+1,bubbleY+61);ctx.fill();
+    const itemWidth=48,bubbleH=68;
+    const bubbleW=Math.max(82,customer.orders.length*itemWidth+12),bubbleX=x-bubbleW/2,bubbleY=y-(portrait?143:147)-(index%2)*(portrait?60:66);
+    roundedRect(ctx,bubbleX-4,bubbleY-4,bubbleW+8,bubbleH+8,13,"#10243f"); roundedRect(ctx,bubbleX,bubbleY,bubbleW,bubbleH,10,"#fffdf4");
+    ctx.fillStyle="#10243f";ctx.beginPath();ctx.moveTo(x-6,bubbleY+bubbleH+3);ctx.lineTo(x+8,bubbleY+bubbleH+3);ctx.lineTo(x+1,bubbleY+bubbleH+14);ctx.fill();
     customer.orders.forEach((order,itemIndex)=>{
-      const itemX=bubbleX+17+itemIndex*34;
+      const product=PRODUCTS.find((item)=>item.id===order);
+      const itemX=bubbleX+6+itemWidth*(itemIndex+.5);
       ctx.save();
       if(customer.completed[itemIndex]) ctx.globalAlpha=.28;
-      drawTreat(ctx,order,itemX,bubbleY+23,.62);
+      drawTreat(ctx,order,itemX,bubbleY+25,.96);
       ctx.restore();
       if(customer.completed[itemIndex]){
-        rect(ctx,itemX-10,bubbleY+34,20,8,"#54d69b");
-        pixelText(ctx,"OK",itemX,bubbleY+38,8,"#10243f","center");
+        roundedRect(ctx,itemX-20,bubbleY+51,40,12,4,"#54d69b");
+        pixelText(ctx,"READY",itemX,bubbleY+57,7,"#10243f","center");
+      } else {
+        const tag=product?.orderTag || product?.short || order.toUpperCase();
+        roundedRect(ctx,itemX-21,bubbleY+50,42,14,4,product?.orderColor || "#10243f");
+        pixelText(ctx,tag,itemX,bubbleY+57,Math.min(7,Math.max(5.5,38/tag.length)),"#fffdf4","center");
       }
     });
     rect(ctx,x-23,y+55,47,8,"#10243f");
@@ -1740,7 +1750,10 @@
     const dt = Math.min(.05, (now - lastTime) / 1000);
     lastTime = now;
     updateGame(dt);
-    renderGame();
+    if (mode === "playing" || sceneDirty) {
+      renderGame();
+      sceneDirty = false;
+    }
     requestAnimationFrame(loop);
   }
 
