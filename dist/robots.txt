@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ice-cream-van-game.vercel.app/sitemap.xml

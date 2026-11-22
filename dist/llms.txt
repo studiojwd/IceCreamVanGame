@@ -1,0 +1,29 @@
+# Ice Cream Van Dash
+
+> Ice Cream Van Dash is a free browser-based pixel-art time-management game about serving customers from an electric British ice cream van.
+
+## Play
+
+- https://ice-cream-van-game.vercel.app/
+
+## Game overview
+
+- Match each customer's order before their patience runs out.
+- Serve ice creams, lollies, hot chocolate, slush drinks and cold cans.
+- Incorrect items deduct their price from the player's takings.
+- Upgrade the van's equipment and unlock new pitches.
+- Submit completed runs to the worldwide leaderboard.
+- Play with touch, mouse or keyboard controls.
+
+## Locations
+
+Christmas Market is the featured starting pitch. Other unlockable locations include Seaside, Village Fete, Football Match, London, Evening Market and Sydney Opera House.
+
+## Public resources
+
+- Sitemap: https://ice-cream-van-game.vercel.app/sitemap.xml
+- Robots policy: https://ice-cream-van-game.vercel.app/robots.txt
+
+## Data
+
+Leaderboard entries contain a player-supplied display name and game result statistics. No account is required to play.
