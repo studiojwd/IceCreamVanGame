@@ -13,20 +13,20 @@
   const LIFETIME_LEADERBOARD_ENDPOINT = `${SUPABASE_URL}/rest/v1/leaderboard_lifetime`;
 
   const PRODUCTS = [
-    { id: "whippy", group: "ice", name: "Classic Whippy", short: "WHIPPY", price: 3, points: 120, prep: 1.35, asset: "classic-whippy.png" },
-    { id: "flake", group: "ice", name: "Chocolate 99", short: "99 FLAKE", price: 4, points: 170, prep: 1.8, asset: "99-flake.png" },
-    { id: "sundae", group: "ice", name: "Berry Sundae", short: "SUNDAE", price: 5, points: 220, prep: 2.15, asset: "sundae.png" },
-    { id: "lolly", group: "ice", name: "Rocket Lolly", short: "LOLLY", price: 2, points: 95, prep: .9, asset: "rocket-lolly.png" },
-    { id: "cola", group: "cans", name: "Cola Can", short: "COLA", price: 2, points: 85, prep: .42, asset: "can-cola.png" },
-    { id: "lemonade", group: "cans", name: "Lemonade Can", short: "LEMONADE", price: 2, points: 85, prep: .42, asset: "can-lemonade.png" },
-    { id: "orange", group: "cans", name: "Orange Can", short: "ORANGE", price: 2, points: 85, prep: .42, asset: "can-orange.png" },
-    { id: "water", group: "cans", name: "Water Can", short: "WATER", price: 2, points: 75, prep: .35, asset: "can-water.png" },
-    { id: "slushRed", group: "slush", name: "Cherry Slush", short: "RED SLUSH", price: 4, points: 190, prep: 2.1, asset: "slush-red.png" },
-    { id: "slushBlue", group: "slush", name: "Blue Slush", short: "BLUE SLUSH", price: 4, points: 190, prep: 2.1, asset: "slush-blue.png" },
-    { id: "slushMix", group: "slush", name: "Mixed Slush", short: "MIXED SLUSH", price: 5, points: 250, prep: 2.8, asset: "slush-mixed.png" },
+    { id: "whippy", group: "ice", name: "Classic Whippy", short: "WHIPPY", orderTag: "WHIPPY", price: 3, points: 120, prep: 1.35, asset: "classic-whippy.png" },
+    { id: "flake", group: "ice", name: "Chocolate 99", short: "99 FLAKE", orderTag: "99 FLAKE", price: 4, points: 170, prep: 1.8, asset: "99-flake.png" },
+    { id: "sundae", group: "ice", name: "Berry Sundae", short: "SUNDAE", orderTag: "SUNDAE", price: 5, points: 220, prep: 2.15, asset: "sundae.png" },
+    { id: "lolly", group: "ice", name: "Rocket Lolly", short: "LOLLY", orderTag: "LOLLY", price: 2, points: 95, prep: .9, asset: "rocket-lolly.png" },
+    { id: "cola", group: "cans", name: "Cola Can", short: "COLA", orderTag: "COLA", price: 2, points: 85, prep: .42, asset: "can-cola.png" },
+    { id: "lemonade", group: "cans", name: "Lemonade Can", short: "LEMONADE", orderTag: "LEMON", price: 2, points: 85, prep: .42, asset: "can-lemonade.png" },
+    { id: "orange", group: "cans", name: "Orange Can", short: "ORANGE", orderTag: "ORANGE", price: 2, points: 85, prep: .42, asset: "can-orange.png" },
+    { id: "water", group: "cans", name: "Water Can", short: "WATER", orderTag: "WATER", price: 2, points: 75, prep: .35, asset: "can-water.png" },
+    { id: "slushRed", group: "slush", name: "Cherry Slush", short: "RED SLUSH", orderTag: "CHERRY", price: 4, points: 190, prep: 2.1, asset: "slush-red.png" },
+    { id: "slushBlue", group: "slush", name: "Blue Slush", short: "BLUE SLUSH", orderTag: "BLUE", price: 4, points: 190, prep: 2.1, asset: "slush-blue.png" },
+    { id: "slushMix", group: "slush", name: "Mixed Slush", short: "MIXED SLUSH", orderTag: "MIXED", price: 5, points: 250, prep: 2.8, asset: "slush-mixed.png" },
     { id: "hotChoc", group: "hot", name: "Hot Chocolate", short: "HOT CHOC", orderTag: "PLAIN", orderColor: "#8c4329", price: 4, points: 200, prep: 2.3, asset: "hot-chocolate-plain.png" },
-    { id: "hotCream", group: "hot", name: "Cream Hot Chocolate", short: "+ CREAM", orderTag: "CREAM", orderColor: "#e7a55d", price: 5, points: 260, prep: 3, asset: "hot-chocolate-cream.png" },
-    { id: "hotDeluxe", group: "hot", name: "Marshmallow Hot Chocolate", short: "MALLOW CHOC", orderTag: "MALLOWS", orderColor: "#e56f9e", price: 6, points: 320, prep: 3.6, asset: "hot-chocolate-marshmallows.png" }
+    { id: "hotCream", group: "hot", name: "Cream Hot Chocolate", short: "+ CREAM", orderTag: "CREAM", orderColor: "#f1bd70", orderTextColor: "#10243f", price: 5, points: 260, prep: 3, asset: "hot-chocolate-cream.png" },
+    { id: "hotDeluxe", group: "hot", name: "Marshmallow Hot Chocolate", short: "MALLOW CHOC", orderTag: "MALLOWS", orderColor: "#f58aae", orderTextColor: "#10243f", price: 6, points: 320, prep: 3.6, asset: "hot-chocolate-marshmallows.png" }
   ];
 
   const PRODUCT_ASSETS = {
@@ -247,6 +247,13 @@
     localStorage.setItem(SAVE_KEY, JSON.stringify(save));
   }
 
+  function trackEvent(name, parameters = {}) {
+    if (typeof window.gtag !== "function") return;
+    try {
+      window.gtag("event", name, parameters);
+    } catch (_) { /* analytics must never interrupt gameplay */ }
+  }
+
   function showScreen(id) {
     screens.forEach((screen) => screen.classList.toggle("active", screen.id === id));
     sceneDirty = true;
@@ -462,6 +469,13 @@
     save.bank -= cost;
     save.upgrades[upgrade.id] += 1;
     persist();
+    trackEvent("upgrade_purchase", {
+      upgrade_id: upgrade.id,
+      upgrade_name: upgrade.name,
+      upgrade_level: save.upgrades[upgrade.id],
+      cost,
+      remaining_balance: save.bank
+    });
     playTone("buy");
     showToast(`${upgrade.name.toUpperCase()} UPGRADED`, "good");
     renderGarage();
@@ -777,6 +791,12 @@
     $("scoreEntryStatus").textContent = stillPending
       ? "Saved on this device. It will upload automatically when you are back online."
       : `${name} is now on the worldwide leaderboard.`;
+    trackEvent("leaderboard_submit", {
+      location_id: entry.location,
+      score: entry.score,
+      customers_served: entry.served,
+      upload_status: stillPending ? "queued_offline" : "uploaded"
+    });
     showToast(stillPending ? "SCORE SAVED OFFLINE" : "WORLDWIDE BOARD UPDATED", "good");
     playTone("buy");
   }
@@ -882,6 +902,12 @@
     updateQueueUI();
     refreshHeader();
     showToast(`${loc.name.toUpperCase()} · HATCH OPEN`, "good");
+    trackEvent("game_start", {
+      location_id: loc.id,
+      location_name: loc.name,
+      difficulty: loc.difficulty,
+      van_skin: save.vanSkin
+    });
     playTone("start");
   }
 
@@ -911,10 +937,32 @@
     $("cashResult").textContent = formatMoney(quit ? 0 : game.cash);
     $("newBest").classList.toggle("hidden", quit || game.score <= previousHigh);
     const afterCareer = careerBest();
-    const newlyUnlocked = LOCATIONS.find((place) => place.unlock > beforeCareer && place.unlock <= afterCareer);
+    const newlyUnlockedLocations = LOCATIONS.filter((place) => place.unlock > beforeCareer && place.unlock <= afterCareer);
+    const newlyUnlocked = newlyUnlockedLocations[0];
     const unlock = $("unlockNotice");
     unlock.classList.toggle("hidden", !newlyUnlocked);
     unlock.textContent = newlyUnlocked ? `NEW PITCH UNLOCKED · ${newlyUnlocked.name.toUpperCase()}` : "";
+    const accuracy = game.attempts ? Math.round(game.correctItems / game.attempts * 100) : 100;
+    trackEvent("game_complete", {
+      location_id: loc.id,
+      location_name: loc.name,
+      outcome: quit ? "quit" : "completed",
+      score: Math.round(game.score),
+      takings: quit ? 0 : Math.round(game.cash),
+      customers_served: game.served,
+      customers_missed: game.lost,
+      mistakes: game.mistakes,
+      accuracy,
+      best_combo: Math.max(1, game.bestCombo)
+    });
+    if (!quit) {
+      newlyUnlockedLocations.forEach((place) => trackEvent("location_unlock", {
+        location_id: place.id,
+        location_name: place.name,
+        required_score: place.unlock,
+        career_best: afterCareer
+      }));
+    }
     $("saveScoreBtn").textContent = "SAVE SCORE";
     prepareScoreEntry(quit);
     showScreen("resultsScreen");
@@ -1686,24 +1734,25 @@
       rect(ctx,x-22,y+41,19,7,"#10243f"); rect(ctx,x+4,y+41,19,7,"#10243f");
     }
     if (customer.status !== "waiting") return;
-    const itemWidth=48,bubbleH=68;
-    const bubbleW=Math.max(82,customer.orders.length*itemWidth+12),bubbleX=x-bubbleW/2,bubbleY=y-(portrait?143:147)-(index%2)*(portrait?60:66);
+    const itemWidth=58,bubbleH=78;
+    const bubbleW=Math.max(96,customer.orders.length*itemWidth+14),bubbleX=x-bubbleW/2,bubbleY=y-(portrait?153:157)-(index%2)*(portrait?68:74);
     roundedRect(ctx,bubbleX-4,bubbleY-4,bubbleW+8,bubbleH+8,13,"#10243f"); roundedRect(ctx,bubbleX,bubbleY,bubbleW,bubbleH,10,"#fffdf4");
     ctx.fillStyle="#10243f";ctx.beginPath();ctx.moveTo(x-6,bubbleY+bubbleH+3);ctx.lineTo(x+8,bubbleY+bubbleH+3);ctx.lineTo(x+1,bubbleY+bubbleH+14);ctx.fill();
     customer.orders.forEach((order,itemIndex)=>{
       const product=PRODUCTS.find((item)=>item.id===order);
-      const itemX=bubbleX+6+itemWidth*(itemIndex+.5);
+      const itemX=bubbleX+7+itemWidth*(itemIndex+.5);
       ctx.save();
       if(customer.completed[itemIndex]) ctx.globalAlpha=.28;
-      drawTreat(ctx,order,itemX,bubbleY+25,.96);
+      drawTreat(ctx,order,itemX,bubbleY+27,1.05);
       ctx.restore();
       if(customer.completed[itemIndex]){
-        roundedRect(ctx,itemX-20,bubbleY+51,40,12,4,"#54d69b");
-        pixelText(ctx,"READY",itemX,bubbleY+57,7,"#10243f","center");
+        roundedRect(ctx,itemX-26,bubbleY+56,52,19,5,"#54d69b");
+        pixelText(ctx,"READY",itemX,bubbleY+66,10,"#10243f","center");
       } else {
         const tag=product?.orderTag || product?.short || order.toUpperCase();
-        roundedRect(ctx,itemX-21,bubbleY+50,42,14,4,product?.orderColor || "#10243f");
-        pixelText(ctx,tag,itemX,bubbleY+57,Math.min(7,Math.max(5.5,38/tag.length)),"#fffdf4","center");
+        const tagSize=tag.length>7?8.5:10;
+        roundedRect(ctx,itemX-26,bubbleY+56,52,19,5,product?.orderColor || "#10243f");
+        pixelText(ctx,tag,itemX,bubbleY+66,tagSize,product?.orderTextColor || "#fffdf4","center");
       }
     });
     rect(ctx,x-23,y+55,47,8,"#10243f");

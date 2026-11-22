@@ -4,7 +4,7 @@
 
 ## Play
 
-- https://ice-cream-van-game.vercel.app/
+- https://www.icecreamvandash.com/
 
 ## Game overview
 
@@ -21,8 +21,8 @@ Christmas Market is the featured starting pitch. Other unlockable locations incl
 
 ## Public resources
 
-- Sitemap: https://ice-cream-van-game.vercel.app/sitemap.xml
-- Robots policy: https://ice-cream-van-game.vercel.app/robots.txt
+- Sitemap: https://www.icecreamvandash.com/sitemap.xml
+- Robots policy: https://www.icecreamvandash.com/robots.txt
 
 ## Data
 
