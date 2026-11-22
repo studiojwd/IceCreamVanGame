@@ -52,7 +52,7 @@
       <div class="top-actions">
         <button id="topHelpBtn" class="header-link" aria-label="How to play">HOW TO PLAY</button>
         <button id="topGarageBtn" class="header-link" aria-label="Open the garage">GARAGE</button>
-        <button id="topLeaderboardBtn" class="header-link" aria-label="Open the worldwide leaderboard">TOP RUNS</button>
+        <button id="topLeaderboardBtn" class="header-link" aria-label="Open the worldwide leaderboards">LEADERBOARD</button>
         <button id="topResetBtn" class="header-link danger-link" aria-label="Reset all saved progress">RESET</button>
         <button id="soundBtn" class="icon-btn" aria-label="Toggle sound" title="Toggle sound">♪</button>
         <button id="pauseBtn" class="icon-btn" aria-label="Pause game" title="Pause game">Ⅱ</button>
@@ -137,7 +137,7 @@
           <form id="scoreEntryForm" class="score-entry" autocomplete="off">
             <div>
               <label for="playerName">ADD THIS RUN TO THE LEADERBOARD</label>
-              <small id="scoreEntryHint">Every completed run is saved to the worldwide board.</small>
+              <small id="scoreEntryHint">Every completed run counts towards both worldwide boards.</small>
             </div>
             <div class="score-entry-controls">
               <input id="playerName" name="playerName" type="text" maxlength="12" placeholder="DRIVER NAME" aria-describedby="scoreEntryHint" required>
@@ -162,8 +162,12 @@
             </div>
             <span class="leaderboard-badge">WORLDWIDE</span>
           </div>
+          <div class="leaderboard-tabs" role="tablist" aria-label="Choose leaderboard type">
+            <button id="singleRunTab" class="leaderboard-tab" type="button" role="tab" aria-selected="true" aria-controls="leaderboardList">SINGLE RUN</button>
+            <button id="lifetimeTab" class="leaderboard-tab" type="button" role="tab" aria-selected="false" aria-controls="leaderboardList">LIFETIME</button>
+          </div>
           <p id="leaderboardIntro" class="leaderboard-intro">Loading the worldwide top ten…</p>
-          <ol id="leaderboardList" class="leaderboard-list"></ol>
+          <ol id="leaderboardList" class="leaderboard-list" aria-live="polite"></ol>
           <p id="leaderboardEmpty" class="leaderboard-empty">Complete a shift to claim the first spot.</p>
           <button id="leaderboardBackBtn" class="pixel-btn primary">BACK</button>
         </div>

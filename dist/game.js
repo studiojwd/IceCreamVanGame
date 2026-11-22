@@ -10,6 +10,7 @@
   const SUPABASE_URL = "https://meruikuqenerdjervotf.supabase.co";
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_QqgTC84y_h9EGC8oUyPoKw_9xXgmQv_";
   const LEADERBOARD_ENDPOINT = `${SUPABASE_URL}/rest/v1/leaderboard_scores`;
+  const LIFETIME_LEADERBOARD_ENDPOINT = `${SUPABASE_URL}/rest/v1/leaderboard_lifetime`;
 
   const PRODUCTS = [
     { id: "whippy", group: "ice", name: "Classic Whippy", short: "WHIPPY", price: 3, points: 120, prep: 1.35, asset: "classic-whippy.png" },
@@ -207,7 +208,7 @@
         highs: { ...DEFAULT_SAVE.highs, ...migratedHighs },
         upgrades: { ...DEFAULT_SAVE.upgrades, ...(raw.upgrades || {}) }
       };
-      merged.leaderboard = Array.isArray(raw.leaderboard) ? raw.leaderboard.slice(0, 10) : [];
+      merged.leaderboard = Array.isArray(raw.leaderboard) ? raw.leaderboard.slice(0, 100) : [];
       merged.pendingScores = Array.isArray(raw.pendingScores) ? raw.pendingScores.filter(Boolean) : [];
       if (!VAN_SKINS.some((skin) => skin.id === merged.vanSkin)) merged.vanSkin = DEFAULT_SAVE.vanSkin;
       return merged;
@@ -222,6 +223,7 @@
   let previousScreen = "titleScreen";
   let garageReturn = "locationScreen";
   let leaderboardReturn = "titleScreen";
+  let leaderboardMode = "single";
   let resetReturn = "titleScreen";
   let game = null;
   let lastTime = performance.now();
@@ -529,6 +531,24 @@
       .slice(0, 10);
   }
 
+  function lifetimeLeaderboardEntries(entries = save.leaderboard) {
+    const totals = new Map();
+    entries.forEach((entry) => {
+      const name = cleanPlayerName(entry?.name || "");
+      const score = Number(entry?.score);
+      if (!name || !Number.isFinite(score)) return;
+      const current = totals.get(name) || { name, score: 0, shifts: 0, bestRun: 0, date: null, lifetime: true };
+      current.score += score;
+      current.shifts += 1;
+      current.bestRun = Math.max(current.bestRun, score);
+      if (!current.date || String(entry.date || "") > String(current.date)) current.date = entry.date;
+      totals.set(name, current);
+    });
+    return [...totals.values()]
+      .sort((a, b) => Number(b.score) - Number(a.score) || Number(b.bestRun) - Number(a.bestRun) || a.name.localeCompare(b.name))
+      .slice(0, 10);
+  }
+
   function remoteScorePayload(entry) {
     return {
       id: entry.id,
@@ -598,6 +618,24 @@
     }));
   }
 
+  async function fetchLifetimeScores() {
+    const fields = "player_name,lifetime_score,shifts,best_run,last_played_at";
+    const response = await fetch(`${LIFETIME_LEADERBOARD_ENDPOINT}?select=${fields}&order=lifetime_score.desc,best_run.desc,player_name.asc&limit=10`, {
+      headers: { apikey: SUPABASE_PUBLISHABLE_KEY },
+      cache: "no-store"
+    });
+    if (!response.ok) throw new Error(`Lifetime leaderboard download failed (${response.status})`);
+    const rows = await response.json();
+    return rows.map((row) => ({
+      name: row.player_name,
+      score: Number(row.lifetime_score),
+      shifts: Number(row.shifts),
+      bestRun: Number(row.best_run),
+      date: row.last_played_at,
+      lifetime: true
+    }));
+  }
+
   function renderLeaderboardEntries(entries) {
     const list = $("leaderboardList");
     list.innerHTML = "";
@@ -615,7 +653,9 @@
       const score = document.createElement("em");
       rank.textContent = String(index + 1);
       driver.textContent = cleanPlayerName(entry.name) || "DRIVER";
-      shift.textContent = `${location.toUpperCase()} · ${Number(entry.served) || 0} SERVED · ${dateLabel}`;
+      shift.textContent = entry.lifetime
+        ? `${Number(entry.shifts) || 0} ${Number(entry.shifts) === 1 ? "SHIFT" : "SHIFTS"} · BEST ${formatScore(entry.bestRun)} · LAST ${dateLabel}`
+        : `${location.toUpperCase()} · ${Number(entry.served) || 0} SERVED · ${dateLabel}`;
       score.textContent = formatScore(entry.score);
       details.append(driver, shift);
       item.append(rank, details, score);
@@ -627,26 +667,46 @@
   async function renderLeaderboard() {
     const token = ++leaderboardRenderToken;
     const intro = $("leaderboardIntro");
+    const single = leaderboardMode === "single";
+    $("leaderboardHeading").textContent = single ? "TOP RUNS" : "LIFETIME TOTALS";
+    $("singleRunTab").setAttribute("aria-selected", String(single));
+    $("lifetimeTab").setAttribute("aria-selected", String(!single));
+    $("singleRunTab").tabIndex = single ? 0 : -1;
+    $("lifetimeTab").tabIndex = single ? -1 : 0;
     intro.textContent = "LOADING THE WORLDWIDE TOP TEN…";
     renderLeaderboardEntries([]);
     await flushPendingScores();
     try {
-      const entries = leaderboardEntries(await fetchTopScores());
+      const entries = single ? leaderboardEntries(await fetchTopScores()) : await fetchLifetimeScores();
       if (token !== leaderboardRenderToken) return;
-      intro.textContent = "Worldwide completed shifts, ranked by score.";
-      $("leaderboardEmpty").textContent = "Complete a shift to claim the first worldwide spot.";
+      intro.textContent = single
+        ? "Worldwide completed shifts, ranked by score."
+        : "Worldwide driver totals, adding every completed shift.";
+      $("leaderboardEmpty").textContent = single
+        ? "Complete a shift to claim the first worldwide spot."
+        : "Complete a shift to start your lifetime total.";
       renderLeaderboardEntries(entries);
     } catch (error) {
       console.warn(error);
       if (token !== leaderboardRenderToken) return;
       intro.textContent = "Worldwide board unavailable — showing scores saved on this device.";
-      $("leaderboardEmpty").textContent = "Complete a shift to claim the first spot.";
-      renderLeaderboardEntries(leaderboardEntries());
+      $("leaderboardEmpty").textContent = single
+        ? "Complete a shift to claim the first spot."
+        : "Complete a shift to start your lifetime total.";
+      renderLeaderboardEntries(single ? leaderboardEntries() : lifetimeLeaderboardEntries());
     }
+  }
+
+  function setLeaderboardMode(nextMode) {
+    if (!["single", "lifetime"].includes(nextMode) || nextMode === leaderboardMode) return;
+    leaderboardMode = nextMode;
+    renderLeaderboard();
+    playTone("ui");
   }
 
   function openLeaderboard(returnTo = currentContext()) {
     leaderboardReturn = returnTo;
+    leaderboardMode = "single";
     mode = "leaderboard";
     const labels = { game: "BACK TO THE HATCH", pauseScreen: "BACK TO PAUSE", resultsScreen: "BACK TO RESULTS", garageScreen: "BACK TO GARAGE", locationScreen: "BACK TO LOCATIONS" };
     $("leaderboardBackBtn").textContent = labels[returnTo] || "BACK TO TITLE";
@@ -698,8 +758,7 @@
       takingsPence: Math.round(game.cash * 100),
       date: new Date().toISOString()
     };
-    save.leaderboard.push(entry);
-    save.leaderboard = leaderboardEntries();
+    save.leaderboard = [entry, ...save.leaderboard.filter((savedEntry) => savedEntry?.id !== entry.id)].slice(0, 100);
     if (!save.pendingScores.some((pending) => pending.id === entry.id)) save.pendingScores.push(entry);
     game.leaderboardSaved = true;
     persist();
@@ -1754,6 +1813,8 @@
   $("cancelResetBtn").addEventListener("click", closeReset);
   $("confirmResetBtn").addEventListener("click", resetAllProgress);
   $("leaderboardBackBtn").addEventListener("click", closeLeaderboard);
+  $("singleRunTab").addEventListener("click", () => setLeaderboardMode("single"));
+  $("lifetimeTab").addEventListener("click", () => setLeaderboardMode("lifetime"));
   $("scoreEntryForm").addEventListener("submit", saveLeaderboardScore);
   $("locationsBtn").addEventListener("click", openLocations);
   $("againBtn").addEventListener("click", () => startRound(selectedLocation));
