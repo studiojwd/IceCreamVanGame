@@ -7,6 +7,9 @@
 
   const $ = (id) => document.getElementById(id);
   const screens = [...document.querySelectorAll(".screen")];
+  const SUPABASE_URL = "https://meruikuqenerdjervotf.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_QqgTC84y_h9EGC8oUyPoKw_9xXgmQv_";
+  const LEADERBOARD_ENDPOINT = `${SUPABASE_URL}/rest/v1/leaderboard_scores`;
 
   const PRODUCTS = [
     { id: "whippy", group: "ice", name: "Classic Whippy", short: "WHIPPY", price: 3, points: 120, prep: 1.35, asset: "classic-whippy.png" },
@@ -182,6 +185,7 @@
     lastScore: 0,
     playerName: "",
     leaderboard: [],
+    pendingScores: [],
     highs: { seaside: 0, village: 0, football: 0, london: 0, christmas: 0, market: 0, sydney: 0 },
     upgrades: { machine: 0, heads: 0, freezer: 0, slushMachine: 0, boiler: 0, till: 0, hatch: 0, power: 0 },
     vanSkin: "cream",
@@ -204,6 +208,7 @@
         upgrades: { ...DEFAULT_SAVE.upgrades, ...(raw.upgrades || {}) }
       };
       merged.leaderboard = Array.isArray(raw.leaderboard) ? raw.leaderboard.slice(0, 10) : [];
+      merged.pendingScores = Array.isArray(raw.pendingScores) ? raw.pendingScores.filter(Boolean) : [];
       if (!VAN_SKINS.some((skin) => skin.id === merged.vanSkin)) merged.vanSkin = DEFAULT_SAVE.vanSkin;
       return merged;
     } catch (_) {
@@ -224,6 +229,8 @@
   let audioCtx = null;
   let selectedCategory = "ice";
   let visibleProductIds = [];
+  let pendingScoreFlush = null;
+  let leaderboardRenderToken = 0;
 
   const customerLooks = [
     ["#f1b888", "#59311f", "#e93448"], ["#9a603d", "#17131a", "#33a8e8"],
@@ -506,15 +513,92 @@
     return value.trim().replace(/[^a-z0-9 '&-]/gi, "").replace(/\s+/g, " ").slice(0, 12).toUpperCase();
   }
 
-  function leaderboardEntries() {
-    return [...save.leaderboard]
+  function createSubmissionId() {
+    if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (character) => {
+      const random = Math.random() * 16 | 0;
+      const value = character === "x" ? random : (random & 3 | 8);
+      return value.toString(16);
+    });
+  }
+
+  function leaderboardEntries(entries = save.leaderboard) {
+    return [...entries]
       .filter((entry) => entry && Number.isFinite(Number(entry.score)))
       .sort((a, b) => Number(b.score) - Number(a.score) || String(a.date).localeCompare(String(b.date)))
       .slice(0, 10);
   }
 
-  function renderLeaderboard() {
-    const entries = leaderboardEntries();
+  function remoteScorePayload(entry) {
+    return {
+      id: entry.id,
+      player_name: cleanPlayerName(entry.name),
+      score: Math.max(1, Math.min(10000000, Math.round(Number(entry.score) || 0))),
+      location: entry.location,
+      served: Math.max(1, Math.min(1000, Math.round(Number(entry.served) || 0))),
+      missed: Math.max(0, Math.min(1000, Math.round(Number(entry.missed) || 0))),
+      mistakes: Math.max(0, Math.min(1000, Math.round(Number(entry.mistakes) || 0))),
+      takings_pence: Math.max(-1000000, Math.min(1000000, Math.round(Number(entry.takingsPence) || 0)))
+    };
+  }
+
+  async function submitRemoteScore(entry) {
+    const response = await fetch(`${LEADERBOARD_ENDPOINT}?on_conflict=id`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        "Content-Type": "application/json",
+        Prefer: "resolution=ignore-duplicates,return=minimal"
+      },
+      body: JSON.stringify(remoteScorePayload(entry))
+    });
+    if (!response.ok) throw new Error(`Leaderboard upload failed (${response.status})`);
+  }
+
+  function flushPendingScores() {
+    if (pendingScoreFlush) return pendingScoreFlush;
+    pendingScoreFlush = (async () => {
+      let uploaded = 0;
+      for (const entry of [...save.pendingScores]) {
+        try {
+          await submitRemoteScore(entry);
+          save.pendingScores = save.pendingScores.filter((pending) => pending.id !== entry.id);
+          persist();
+          uploaded += 1;
+        } catch (error) {
+          console.warn(error);
+          break;
+        }
+      }
+      return { uploaded, pending: save.pendingScores.length };
+    })().finally(() => {
+      pendingScoreFlush = null;
+    });
+    return pendingScoreFlush;
+  }
+
+  async function fetchTopScores() {
+    const fields = "id,player_name,score,location,served,missed,mistakes,takings_pence,created_at";
+    const response = await fetch(`${LEADERBOARD_ENDPOINT}?select=${fields}&order=score.desc,created_at.asc&limit=10`, {
+      headers: { apikey: SUPABASE_PUBLISHABLE_KEY },
+      cache: "no-store"
+    });
+    if (!response.ok) throw new Error(`Leaderboard download failed (${response.status})`);
+    const rows = await response.json();
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.player_name,
+      score: Number(row.score),
+      location: row.location,
+      served: Number(row.served),
+      missed: Number(row.missed),
+      mistakes: Number(row.mistakes),
+      takingsPence: Number(row.takings_pence),
+      date: row.created_at
+    }));
+  }
+
+  function renderLeaderboardEntries(entries) {
     const list = $("leaderboardList");
     list.innerHTML = "";
     entries.forEach((entry, index) => {
@@ -524,10 +608,41 @@
       const dateLabel = date && !Number.isNaN(date.getTime())
         ? date.toLocaleDateString(undefined, { day: "2-digit", month: "short" }).toUpperCase()
         : "--";
-      item.innerHTML = `<b>${index + 1}</b><div><strong>${cleanPlayerName(entry.name) || "DRIVER"}</strong><small>${location.toUpperCase()} · ${Number(entry.served) || 0} SERVED · ${dateLabel}</small></div><em>${formatScore(entry.score)}</em>`;
+      const rank = document.createElement("b");
+      const details = document.createElement("div");
+      const driver = document.createElement("strong");
+      const shift = document.createElement("small");
+      const score = document.createElement("em");
+      rank.textContent = String(index + 1);
+      driver.textContent = cleanPlayerName(entry.name) || "DRIVER";
+      shift.textContent = `${location.toUpperCase()} · ${Number(entry.served) || 0} SERVED · ${dateLabel}`;
+      score.textContent = formatScore(entry.score);
+      details.append(driver, shift);
+      item.append(rank, details, score);
       list.appendChild(item);
     });
     $("leaderboardEmpty").classList.toggle("hidden", entries.length > 0);
+  }
+
+  async function renderLeaderboard() {
+    const token = ++leaderboardRenderToken;
+    const intro = $("leaderboardIntro");
+    intro.textContent = "LOADING THE WORLDWIDE TOP TEN…";
+    renderLeaderboardEntries([]);
+    await flushPendingScores();
+    try {
+      const entries = leaderboardEntries(await fetchTopScores());
+      if (token !== leaderboardRenderToken) return;
+      intro.textContent = "Worldwide completed shifts, ranked by score.";
+      $("leaderboardEmpty").textContent = "Complete a shift to claim the first worldwide spot.";
+      renderLeaderboardEntries(entries);
+    } catch (error) {
+      console.warn(error);
+      if (token !== leaderboardRenderToken) return;
+      intro.textContent = "Worldwide board unavailable — showing scores saved on this device.";
+      $("leaderboardEmpty").textContent = "Complete a shift to claim the first spot.";
+      renderLeaderboardEntries(leaderboardEntries());
+    }
   }
 
   function openLeaderboard(returnTo = currentContext()) {
@@ -553,6 +668,7 @@
     const status = $("scoreEntryStatus");
     input.value = save.playerName || "";
     status.textContent = "";
+    button.textContent = "SAVE SCORE";
     game.leaderboardSaved = false;
     const eligible = !quit && game.served > 0 && game.score > 0;
     form.classList.toggle("disabled", !eligible);
@@ -561,7 +677,7 @@
     if (!eligible) status.textContent = quit ? "Finish a full shift to record a leaderboard score." : "Serve at least one customer to record a score.";
   }
 
-  function saveLeaderboardScore(event) {
+  async function saveLeaderboardScore(event) {
     event.preventDefault();
     if (!game || !game.ended || game.leaderboardSaved) return;
     const name = cleanPlayerName($("playerName").value);
@@ -571,23 +687,34 @@
       return;
     }
     save.playerName = name;
-    save.leaderboard.push({
+    const entry = {
       id: game.runId,
       name,
       score: Math.round(game.score),
       location: game.loc.id,
       served: game.served,
+      missed: game.lost,
+      mistakes: game.mistakes,
+      takingsPence: Math.round(game.cash * 100),
       date: new Date().toISOString()
-    });
+    };
+    save.leaderboard.push(entry);
     save.leaderboard = leaderboardEntries();
+    if (!save.pendingScores.some((pending) => pending.id === entry.id)) save.pendingScores.push(entry);
     game.leaderboardSaved = true;
     persist();
     $("playerName").value = name;
     $("playerName").disabled = true;
     $("saveScoreBtn").disabled = true;
+    $("saveScoreBtn").textContent = "UPLOADING…";
+    $("scoreEntryStatus").textContent = "Saving this run to the worldwide leaderboard…";
+    await flushPendingScores();
+    const stillPending = save.pendingScores.some((pending) => pending.id === entry.id);
     $("saveScoreBtn").textContent = "SCORE SAVED";
-    $("scoreEntryStatus").textContent = `${name} is now on the Top Runs board.`;
-    showToast("LEADERBOARD UPDATED", "good");
+    $("scoreEntryStatus").textContent = stillPending
+      ? "Saved on this device. It will upload automatically when you are back online."
+      : `${name} is now on the worldwide leaderboard.`;
+    showToast(stillPending ? "SCORE SAVED OFFLINE" : "WORLDWIDE BOARD UPDATED", "good");
     playTone("buy");
   }
 
@@ -680,7 +807,7 @@
       shake: 0,
       ended: false,
       elapsed: 0,
-      runId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      runId: createSubmissionId(),
       leaderboardSaved: false,
       canStock: { cola: stock, lemonade: stock, orange: stock, water: stock }
     };
@@ -1661,6 +1788,7 @@
   });
 
   document.addEventListener("visibilitychange", () => { if (document.hidden && mode === "playing") pauseGame(); });
+  window.addEventListener("online", () => { flushPendingScores(); });
 
   async function runLoadingScreen() {
     const loader = $("loadingScreen");
@@ -1705,6 +1833,7 @@
   updateQueueUI();
   refreshHeader();
   showScreen("titleScreen");
+  flushPendingScores();
   runLoadingScreen();
   requestAnimationFrame(loop);
 })();
