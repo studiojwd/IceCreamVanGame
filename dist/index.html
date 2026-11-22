@@ -34,6 +34,7 @@
         <button id="topHelpBtn" class="header-link" aria-label="How to play">HOW TO PLAY</button>
         <button id="topGarageBtn" class="header-link" aria-label="Open the garage">GARAGE</button>
         <button id="topLeaderboardBtn" class="header-link" aria-label="Open the local leaderboard">TOP RUNS</button>
+        <button id="topResetBtn" class="header-link danger-link" aria-label="Reset all saved progress">RESET</button>
         <button id="soundBtn" class="icon-btn" aria-label="Toggle sound" title="Toggle sound">♪</button>
         <button id="pauseBtn" class="icon-btn" aria-label="Pause game" title="Pause game">Ⅱ</button>
       </div>
@@ -45,7 +46,6 @@
       <section id="titleScreen" class="screen title-screen active">
         <div class="title-shade"></div>
         <div class="title-copy">
-          <p class="eyebrow">A PROPER BRITISH ICE CREAM VAN GAME</p>
           <img class="title-logo" src="assets/logos/ice-cream-van-dash-logo.png" alt="Ice Cream Van Dash">
           <p class="title-sub">Serve the queue. Upgrade the van.<br>Chase the perfect round.</p>
           <div class="title-actions">
@@ -172,6 +172,19 @@
           <h2 id="pauseHeading">ROUND PAUSED</h2>
           <button id="resumeBtn" class="pixel-btn primary">BACK TO THE HATCH</button>
           <button id="quitBtn" class="text-btn">END THIS ROUND</button>
+        </div>
+      </section>
+
+      <section id="resetScreen" class="screen menu-screen" role="dialog" aria-modal="true" aria-labelledby="resetHeading" aria-describedby="resetDescription">
+        <div class="menu-panel reset-panel">
+          <p class="eyebrow">FRESH START</p>
+          <h2 id="resetHeading">RESET ALL PROGRESS?</h2>
+          <p id="resetDescription" class="reset-copy">This permanently clears every score, leaderboard entry, unlocked location, upgrade, van-fund balance and garage choice saved on this device.</p>
+          <div class="reset-warning"><strong>THIS CANNOT BE UNDONE</strong><span>Your game will return to its original starting state.</span></div>
+          <div class="panel-actions reset-actions">
+            <button id="cancelResetBtn" class="pixel-btn secondary">KEEP MY PROGRESS</button>
+            <button id="confirmResetBtn" class="pixel-btn danger">RESET EVERYTHING</button>
+          </div>
         </div>
       </section>
 

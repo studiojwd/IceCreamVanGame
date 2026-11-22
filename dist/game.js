@@ -175,6 +175,7 @@
     { id: "power", icon: "⚡", name: "Battery & Inverter", desc: "Reliable electric power speeds up every order.", base: 210, equipment: ["battery", "batteryUpgraded"] }
   ];
 
+  const SAVE_KEY = "whitby-whippy-dash-save";
   const DEFAULT_SAVE = {
     bank: 0,
     career: 0,
@@ -190,7 +191,7 @@
 
   function loadSave() {
     try {
-      const raw = JSON.parse(localStorage.getItem("whitby-whippy-dash-save"));
+      const raw = JSON.parse(localStorage.getItem(SAVE_KEY));
       if (!raw) return structuredClone(DEFAULT_SAVE);
       const migratedHighs = { ...(raw.highs || {}) };
       if (!migratedHighs.seaside && migratedHighs.whitby) migratedHighs.seaside = migratedHighs.whitby;
@@ -216,6 +217,7 @@
   let previousScreen = "titleScreen";
   let garageReturn = "locationScreen";
   let leaderboardReturn = "titleScreen";
+  let resetReturn = "titleScreen";
   let game = null;
   let lastTime = performance.now();
   let toastTimer = 0;
@@ -230,7 +232,7 @@
   ];
 
   function persist() {
-    localStorage.setItem("whitby-whippy-dash-save", JSON.stringify(save));
+    localStorage.setItem(SAVE_KEY, JSON.stringify(save));
   }
 
   function showScreen(id) {
@@ -468,6 +470,7 @@
     const active = activeScreenId();
     if (active === "helpScreen") return previousScreen;
     if (active === "leaderboardScreen") return leaderboardReturn;
+    if (active === "resetScreen") return resetReturn;
     if (mode === "playing") return "game";
     return active || (game && !game.ended ? "game" : "titleScreen");
   }
@@ -616,6 +619,42 @@
   function closeGarage() {
     restoreContext(garageReturn);
     playTone("ui");
+  }
+
+  function openReset(returnTo = currentContext()) {
+    if (activeScreenId() === "resetScreen") return;
+    resetReturn = returnTo;
+    mode = "reset";
+    showScreen("resetScreen");
+    refreshHeader();
+    playTone("ui");
+    requestAnimationFrame(() => $("cancelResetBtn").focus());
+  }
+
+  function closeReset() {
+    restoreContext(resetReturn);
+    playTone("ui");
+  }
+
+  function resetAllProgress() {
+    localStorage.removeItem(SAVE_KEY);
+    save = structuredClone(DEFAULT_SAVE);
+    game = null;
+    mode = "title";
+    selectedLocation = 0;
+    selectedCategory = "ice";
+    previousScreen = "titleScreen";
+    garageReturn = "locationScreen";
+    leaderboardReturn = "titleScreen";
+    resetReturn = "titleScreen";
+    visibleProductIds = [];
+    $("productButtons").innerHTML = "";
+    $("playerName").value = "";
+    showScreen("titleScreen");
+    refreshHeader();
+    showToast("ALL PROGRESS RESET", "good");
+    playTone("ui");
+    requestAnimationFrame(() => $("playBtn").focus());
   }
 
   function startRound(index) {
@@ -1584,6 +1623,9 @@
     if (active === "leaderboardScreen") return;
     openLeaderboard(active === "helpScreen" ? previousScreen : currentContext());
   });
+  $("topResetBtn").addEventListener("click", () => openReset(currentContext()));
+  $("cancelResetBtn").addEventListener("click", closeReset);
+  $("confirmResetBtn").addEventListener("click", resetAllProgress);
   $("leaderboardBackBtn").addEventListener("click", closeLeaderboard);
   $("scoreEntryForm").addEventListener("submit", saveLeaderboardScore);
   $("locationsBtn").addEventListener("click", openLocations);
@@ -1614,6 +1656,7 @@
       else if (mode === "help") closeHelp();
       else if (mode === "garage") closeGarage();
       else if (mode === "leaderboard") closeLeaderboard();
+      else if (mode === "reset") closeReset();
     }
   });
 
